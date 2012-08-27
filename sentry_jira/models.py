@@ -40,7 +40,6 @@ class JIRAPlugin(IssuePlugin):
         return "Create JIRA Issue"
 
     def create_issue(self, group, form_data):
-        print form_data
         jira_client = self.get_jira_client(group.project)
         issue_response = jira_client.create_issue(
             form_data["project_id"],
@@ -49,7 +48,6 @@ class JIRAPlugin(IssuePlugin):
             form_data["description"],
             form_data["fix_version"]
         )
-        print issue_response
         return issue_response["key"]
 
     def get_issue_url(self, group, issue_id):
