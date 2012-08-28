@@ -56,11 +56,11 @@ class JIRAOptionsForm(forms.Form):
 class JIRAIssueForm(forms.Form):
 
     project_key = forms.CharField(widget=forms.HiddenInput())
-    project = forms.CharField(
+    project = forms.CharField(widget=forms.HiddenInput())
+    issuetype = forms.ChoiceField(
         label="Issue Type",
-        widget=forms.HiddenInput()
+        help_text="Changing the issue type will refresh the page with the required form fields."
     )
-    issuetype = forms.ChoiceField(help_text="Changing the issue type will refresh the page with the required form fields.")
 
     summary = forms.CharField(
         widget=forms.TextInput(attrs={'class': 'span6'})
