@@ -1,3 +1,4 @@
 sentry.conf.py
+*.pyc
 .idea/
 env/

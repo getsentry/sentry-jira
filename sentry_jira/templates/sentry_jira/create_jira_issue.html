@@ -1,6 +1,6 @@
 {% extends "sentry/groups/details.html" %}
 
-{% load i18n %}
+{% load i18n crispy_forms_filters %}
 
 {% block title %}{{ title }} | {{ block.super }}{% endblock %}
 
@@ -10,30 +10,29 @@
         <h3>{{ title }}</h3>
     </div>
     {% if form.errors %}
-    <div class="alert-message error">{% trans "Please correct the errors below." %}</div>
+        <div class="alert-message error">{% trans "Please correct the errors below." %}</div>
     {% endif %}
-
-    <form class="form-stacked" action="" method="post">
+    <p>This will create an issue in JIRA and create a link within the Sentry Event.</p>
+    <br />
+    <form class="form-horizontal" action="" method="post">
         {% csrf_token %}
-        <input type="hidden" name="next" value="{{ next }}" />
-        <fieldset>
-            {% for field in form.hidden_fields %}
-            {{ field }}
-            {% endfor %}
-
-            {% for field in form.visible_fields %}
-            <div class="clearfix{% if field.errors %} error{% endif %}">
-                {{ field.label_tag }}
-                <div class="input">{{ field }}</div>
-                {% if field.help_text %}
-                <span class="help-block">{{ field.help_text }}</span>
-                {% endif %}
-            </div>
-            {% endfor %}
-        </fieldset>
-        <p class="actions">
-            <button type="submit" class="btn btn-primary">{% trans "Save Changes" %}</button>
-        </p>
+        {{ form|crispy }}
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{% trans "Create JIRA Issue" %}</button>
+        </div>
     </form>
 </div>
+{% endblock %}
+
+{% block content_after %}
+    {{ block.super }}
+    <script type="text/javascript">
+        $(document).ready(function(){
+            $("#id_issuetype").on("change", function(){
+                // refresh the page with updated form based on issue type.
+                window.location.search = "?issuetype=" + $(this).val();
+            });
+        });
+    </script>
+
 {% endblock %}

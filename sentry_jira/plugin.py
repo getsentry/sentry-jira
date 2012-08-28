@@ -30,28 +30,27 @@ class JIRAPlugin(IssuePlugin):
         return JIRAClient(instance, username, pw)
 
     def get_initial_form_data(self, request, group, event):
-        return {
+        initial = {
             'summary': self._get_group_title(request, group, event),
             'description': self._get_group_description(request, group, event),
             'project_key': self.get_option('default_project', group.project),
             'jira_client': self.get_jira_client(group.project)
         }
 
+        if request.GET.get("issuetype"):
+            # start rendering form with different issue type
+            initial["issuetype"] = request.GET.get("issuetype")
+
+        return initial
+
     def get_new_issue_title(self):
         return "Create JIRA Issue"
 
     def create_issue(self, group, form_data):
         jira_client = self.get_jira_client(group.project)
-        issue_response = jira_client.create_issue(
-            form_data["project_id"],
-            form_data["issue_type"],
-            form_data["summary"],
-            form_data["description"],
-            form_data["fix_version"]
-        )
+        issue_response = jira_client.create_issue(form_data)
         return issue_response["key"]
 
     def get_issue_url(self, group, issue_id):
         instance = self.get_option('instance_url', group.project)
         return "%s/browse/%s" % (instance, issue_id)
-

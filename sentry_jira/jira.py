@@ -1,15 +1,16 @@
 import logging
 import requests
 from sentry.utils import json
+import collections
 
 log = logging.getLogger(__name__)
 
 class JIRAClient(object):
-    PROJECT_URL = "/rest/api/2/project"
-    META_URL = "/rest/api/2/issue/createmeta"
-    CREATE_URL = "/rest/api/2/issue"
-    PRIORITIES_URL = "/rest/api/2/priority"
-    VERSIONS_URL = "/rest/api/2/project/%s/versions"
+    PROJECT_URL = '/rest/api/2/project'
+    META_URL = '/rest/api/2/issue/createmeta'
+    CREATE_URL = '/rest/api/2/issue'
+    PRIORITIES_URL = '/rest/api/2/priority'
+    VERSIONS_URL = '/rest/api/2/project/%s/versions'
 
     def __init__(self, instance_uri, username, password):
         self.instance_url = instance_uri
@@ -20,25 +21,17 @@ class JIRAClient(object):
         return self.make_request('get', self.PROJECT_URL)
 
     def get_create_meta(self, project):
-        return self.make_request('get', self.META_URL, {'projectKeys': project})
+        return self.make_request('get', self.META_URL, {'projectKeys': project, 'expand': 'projects.issuetypes.fields'})
 
     def get_versions(self, project):
         return self.make_request('get', self.VERSIONS_URL % project)
 
-    def create_issue(self, project, issue_type, summary, description, fix_version):
-        data = {
-            "fields": {
-                "project": {
-                    "id": project
-                },
-                "issuetype": {
-                    "id": issue_type
-                },
-                "fixVersions": [{"id": v} for v in fix_version],
-                "summary": summary,
-                "description": description
-            }
-        }
+    def create_issue(self, raw_form_data):
+        """
+        Take a set of raw form data and massage it into API postable goodness.
+        """
+        data = {'fields': raw_form_data}
+        print data
         return self.make_request('post', self.CREATE_URL, payload=data)
 
     def get_priorities(self):
@@ -54,11 +47,11 @@ class JIRAClient(object):
             else:
                 r = requests.post(url, data=json.dumps(payload), auth=auth, headers=headers)
         except Exception, e:
-            logging.error("Error in request to %s: %s" % (url, e.message))
+            logging.error('Error in request to %s: %s' % (url, e.message))
             return None
 
         if r.status_code is 200:
-            return r.json
+            return json.loads(r.text, object_pairs_hook=collections.OrderedDict)
         else:
             print r.text
             return r.json
