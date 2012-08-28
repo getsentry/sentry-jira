@@ -5,6 +5,17 @@ A flexible extension for Sentry which allows you to create issues in JIRA based 
 It is capable of rendering and saving many custom fields, and will display the proper fields depending on 
 which issue type you are trying to create.
 
+Attention
+---------
+
+I am developing this plugin against 2 different configurations of JIRA:
+
+- stock JIRA in development mode
+- live instance that has many specialized configurations / required custom fields
+
+Since JIRA is so configurable, I'm looking for lots of feedback of the different ways that this breaks
+with specialized configurations.
+
 Visual Walkthrough
 ------------------
 
