@@ -14,8 +14,8 @@ I am developing this plugin against 2 different configurations of JIRA:
 - live instance that has many specialized configurations / required custom fields
 
 Since JIRA is so configurable, I'm looking for lots of feedback of the different ways that this breaks
-with specialized configurations.
-
+with specialized configurations. Provide your feedback here: https://github.com/thurloat/sentry-jira/issues
+ 
 Visual Walkthrough
 ------------------
 
