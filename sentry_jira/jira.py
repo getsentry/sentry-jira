@@ -2,10 +2,15 @@ import logging
 import requests
 from sentry.utils import json
 import collections
+from simplejson.decoder import JSONDecodeError
 
 log = logging.getLogger(__name__)
 
 class JIRAClient(object):
+    """
+    The JIRA API Client, so you don't have to.
+    """
+
     PROJECT_URL = '/rest/api/2/project'
     META_URL = '/rest/api/2/issue/createmeta'
     CREATE_URL = '/rest/api/2/issue'
@@ -50,8 +55,19 @@ class JIRAClient(object):
             logging.error('Error in request to %s: %s' % (url, e.message))
             return None
 
-        if r.status_code is 200:
-            return json.loads(r.text, object_pairs_hook=collections.OrderedDict)
-        else:
-            print r.text
-            return r.json
+        return JIRAResponse(r.text, r.status_code)
+
+class JIRAResponse(object):
+    """
+    A Slimy little wrapper around a python-requests response object that renders
+    JSON from JIRA's ordered dicts (fields come back in order, but python obv.
+    doesn't care)
+    """
+    def __init__(self, response_text, status_code):
+        self.text = response_text
+        try:
+            self.json = json.loads(response_text, object_pairs_hook=collections.OrderedDict)
+        except JSONDecodeError, e:
+            # must be an awful code.
+            self.json = None
+        self.status_code = status_code

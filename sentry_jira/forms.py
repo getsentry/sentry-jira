@@ -34,7 +34,7 @@ class JIRAOptionsForm(forms.Form):
         if initial:
             # make a connection to JIRA to fetch a default project.
             jira = JIRAClient(initial.get("instance_url"), initial.get("username"), initial.get("password"))
-            projects = jira.get_projects_list()
+            projects = jira.get_projects_list().json
             if projects:
                 project_choices = [(p.get('key'), "%s (%s)" % (p.get('name'), p.get('key'))) for p in projects]
                 self.fields["default_project"].choices = project_choices
@@ -63,21 +63,23 @@ class JIRAIssueForm(forms.Form):
     )
 
     summary = forms.CharField(
+        label="Issue Summary",
         widget=forms.TextInput(attrs={'class': 'span6'})
     )
     description = forms.CharField(
-        widget=forms.Textarea(attrs={"class": 'span6'}))
+        widget=forms.Textarea(attrs={"class": 'span6'})
+    )
     fixVersions = forms.MultipleChoiceField()
 
     def __init__(self, *args, **kwargs):
         initial = kwargs.get("initial")
         jira_client = initial.pop("jira_client")
 
-        priorities = jira_client.get_priorities()
-        versions = jira_client.get_versions(initial.get("project_key"))
+        priorities = jira_client.get_priorities().json
+        versions = jira_client.get_versions(initial.get("project_key")).json
 
         # fetch the meta information about the project.
-        meta = jira_client.get_create_meta(initial.get("project_key"))
+        meta = jira_client.get_create_meta(initial.get("project_key")).json
         project = meta["projects"][0]
         issue_types = project["issuetypes"]
 
