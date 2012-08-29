@@ -31,19 +31,26 @@ class JIRAOptionsForm(forms.Form):
         super(JIRAOptionsForm, self).__init__(*args, **kwargs)
 
         initial = kwargs.get("initial")
+        project_safe = False
         if initial:
             # make a connection to JIRA to fetch a default project.
             jira = JIRAClient(initial.get("instance_url"), initial.get("username"), initial.get("password"))
-            projects = jira.get_projects_list().json
-            if projects:
-                project_choices = [(p.get('key'), "%s (%s)" % (p.get('name'), p.get('key'))) for p in projects]
-                self.fields["default_project"].choices = project_choices
-            else:
-                del self.fields["default_project"]
-        else:
+            projects_response = jira.get_projects_list()
+            if projects_response.status_code == 200:
+                projects = projects_response.json
+                if projects:
+                    project_choices = [(p.get('key'), "%s (%s)" % (p.get('name'), p.get('key'))) for p in projects]
+                    project_safe = True
+                    self.fields["default_project"].choices = project_choices
+
+        if not project_safe:
             del self.fields["default_project"]
 
     def clean_password(self):
+        """
+        Don't complain if the field is empty and a password is already stored,
+        no one wants to type a pw in each time they want to change it.
+        """
         pw = self.cleaned_data.get("password")
         if pw:
             return pw
@@ -52,6 +59,29 @@ class JIRAOptionsForm(forms.Form):
             if not old_pw:
                 raise ValidationError("A Password is Required")
             return old_pw
+
+    def clean(self):
+        """
+        try and build a JIRAClient and make a random call to make sure the
+        configuration is right.
+        """
+        cd = self.cleaned_data
+        jira = JIRAClient(cd["instance_url"], cd["username"], cd["password"])
+        sut_response = jira.get_priorities()
+        if sut_response.status_code == 403 or sut_response.status_code == 401:
+            self.errors["username"] = ["Username might be incorrect"]
+            self.errors["password"] = ["Password might be incorrect"]
+            raise ValidationError("Unable to connect to JIRA: %s, if you have "
+                                  "tried and failed multiple times you may have"
+                                  " to enter a CAPTCHA in JIRA to re-enable API"
+                                  " logins." % sut_response.status_code)
+        elif sut_response.status_code == 500 or sut_response.json is None:
+            raise ValidationError("Unable to connect to JIRA: Bad Response")
+        elif sut_response.status_code > 200:
+            raise ValidationError("Unable to connect to JIRA: %s" % sut_response.status_code)
+
+        return cd
+
 
 class JIRAIssueForm(forms.Form):
 

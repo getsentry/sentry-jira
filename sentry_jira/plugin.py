@@ -22,7 +22,7 @@ class JIRAPlugin(IssuePlugin):
     create_issue_template = 'sentry_jira/create_jira_issue.html'
 
     def is_configured(self, project, **kwargs):
-        if not self.get_option('instance_url', project):
+        if not self.get_option('default_project', project):
             return False
         return True
 
