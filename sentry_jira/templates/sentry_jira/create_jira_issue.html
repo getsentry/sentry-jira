@@ -9,12 +9,10 @@
     <div class="page-header">
         <h3>{{ title }}</h3>
     </div>
-    {% if form.errors %}
-        <div class="alert-message error">{% trans "Please correct the errors below." %}</div>
-    {% endif %}
     <p>This will create an issue in JIRA and create a link within the Sentry Event.</p>
     <br />
-    <form class="form-horizontal" action="" method="post">
+    <form class="form-horizontal" action="" method="post" id="jira_issue_form">
+        <input type="hidden" value="0" id="changing_issuetype" name="changing_issuetype" />
         {% csrf_token %}
         {{ form|crispy }}
         <div class="form-actions">
@@ -30,7 +28,8 @@
         $(document).ready(function(){
             $("#id_issuetype").on("change", function(){
                 // refresh the page with updated form based on issue type.
-                window.location.search = "?issuetype=" + $(this).val();
+                $("#changing_issuetype").val("1");
+                $("#jira_issue_form").submit();
             });
         });
     </script>

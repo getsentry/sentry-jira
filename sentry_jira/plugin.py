@@ -40,10 +40,6 @@ class JIRAPlugin(IssuePlugin):
             'jira_client': self.get_jira_client(group.project)
         }
 
-        if request.GET.get("issuetype"):
-            # start rendering form with different issue type
-            initial["issuetype"] = request.GET.get("issuetype")
-
         return initial
 
     def get_new_issue_title(self):
@@ -86,28 +82,36 @@ class JIRAPlugin(IssuePlugin):
 
         prefix = self.get_conf_key()
         event = group.get_latest_event()
-
         form = self.new_issue_form(request.POST or None, initial=self.get_initial_form_data(request, group, event))
-        if form.is_valid():
-            try:
-                ################################################################
-                # This is the only different part.
-                # TODO: Find a workaround to remove this in the future. Hate Copypasta code.
-                #
-                issue_id, errors = self.create_issue(group, form.cleaned_data)
-                if errors:
-                    form.errors.update(errors)
-                #
-                #
-                ################################################################
-            except forms.ValidationError, e:
-                form.errors['__all__'] = u'Error creating issue: %s' % e
 
-        if form.is_valid():
-            GroupMeta.objects.set_value(group, '%s:tid' % prefix, issue_id)
+        ########################################################################
+        # to allow the form to be submitted, but ignored so that dynamic fields
+        # can change if the issuetype is different
+        #
+        if request.POST and request.POST.get("changing_issuetype") == "0":
+        ########################################################################
+            if form.is_valid():
+                try:
+                    ############################################################
+                    # This is the only different part.
+                    # TODO: Find a workaround to remove this in the future. Hate Copypasta code.
+                    #
+                    issue_id, errors = self.create_issue(group, form.cleaned_data)
+                    if errors:
+                        form.errors.update(errors)
+                    #
+                    #
+                    ############################################################
+                except forms.ValidationError, e:
+                    form.errors['__all__'] = u'Error creating issue: %s' % e
 
-            return self.redirect(reverse('sentry-group', args=[group.project_id, group.pk]))
+            if form.is_valid():
+                GroupMeta.objects.set_value(group, '%s:tid' % prefix, issue_id)
 
+                return self.redirect(reverse('sentry-group', args=[group.project_id, group.pk]))
+        else:
+            for name, field in form.fields.items():
+                form.errors[name] = form.error_class()
         context = {
             'form': form,
             'title': self.get_new_issue_title(),
