@@ -1,8 +1,9 @@
 import logging
 import requests
-from sentry.utils import json
 import collections
+from sentry.utils import json
 from simplejson.decoder import JSONDecodeError
+from BeautifulSoup import BeautifulStoneSoup
 
 log = logging.getLogger(__name__)
 
@@ -31,6 +32,9 @@ class JIRAClient(object):
     def get_versions(self, project):
         return self.make_request('get', self.VERSIONS_URL % project)
 
+    def get_autocomplete(self, full_url):
+        return self.make_request('get', full_url)
+
     def create_issue(self, raw_form_data):
         """
         Take a set of raw form data and massage it into API postable goodness.
@@ -43,7 +47,8 @@ class JIRAClient(object):
         return self.make_request('get', self.PRIORITIES_URL)
 
     def make_request(self, method, url, payload=None):
-        url = self.instance_url + url
+        if url[:4] != "http":
+            url = self.instance_url + url
         auth = self.username, self.password
         headers = {'content-type': 'application/json'}
         try:
@@ -66,9 +71,13 @@ class JIRAResponse(object):
     """
     def __init__(self, response_text, status_code):
         self.text = response_text
+        self.xml = None
         try:
             self.json = json.loads(response_text, object_pairs_hook=collections.OrderedDict)
         except JSONDecodeError, e:
+            if self.text[:5] == "<?xml":
+                # perhaps it's XML?
+                self.xml = BeautifulStoneSoup(self.text)
             # must be an awful code.
             self.json = None
         self.status_code = status_code

@@ -1,9 +1,14 @@
+import urllib
+import urlparse
+from BeautifulSoup import BeautifulStoneSoup
 from django import forms
 from django.core.urlresolvers import reverse
+from django.http import HttpResponse
 from django.utils.translation import ugettext_lazy as _
 from sentry.models import GroupMeta
-from sentry.plugins.base import register
+from sentry.plugins.base import register, Response
 from sentry.plugins.bases.issue import IssuePlugin
+from sentry.utils import json
 from forms import JIRAOptionsForm, JIRAIssueForm
 from sentry_jira.jira import JIRAClient
 
@@ -21,7 +26,7 @@ class JIRAPlugin(IssuePlugin):
     new_issue_form = JIRAIssueForm
     create_issue_template = 'sentry_jira/create_jira_issue.html'
 
-    def is_configured(self, project, **kwargs):
+    def is_configured(self, request, project, **kwargs):
         if not self.get_option('default_project', project):
             return False
         return True
@@ -45,7 +50,7 @@ class JIRAPlugin(IssuePlugin):
     def get_new_issue_title(self):
         return "Create JIRA Issue"
 
-    def create_issue(self, group, form_data):
+    def create_issue(self, request, group, form_data):
         """
         Since this is called wrapped in a try/catch on ValidationError to display
         an end user error, that's what I'll throw when JIRA doesn't like it.
@@ -72,18 +77,41 @@ class JIRAPlugin(IssuePlugin):
         instance = self.get_option('instance_url', group.project)
         return "%s/browse/%s" % (instance, issue_id)
 
+    def handle_autocomplete(self, request, group, **kwargs):
+        jira_client = self.get_jira_client(group.project)
+        url = urllib.unquote_plus(request.GET.get("user_autocomplete"))
+        parsed = list(urlparse.urlsplit(url))
+        query = urlparse.parse_qs(parsed[3])
+        query["query"] = request.GET.get("q")
+        if query.get('fieldName'):
+            query["fieldName"] = query["fieldName"][0] # for some reason its a list.
+        parsed[3] = urllib.urlencode(query)
+        final_url = urlparse.urlunsplit(parsed)
+        autocomplete_response = jira_client.get_autocomplete(final_url)
+        users = []
+        usersxml = autocomplete_response.xml.findAll("users")
+        for userxml in usersxml:
+            users.append({
+                'value': userxml.find("name").text,
+                'display': userxml.find("html").text})
+
+        return JSONResponse({'users': users})
+
     def view(self, request, group, **kwargs):
         """
         Overriding the super to alter the error checking functionality. Method
         source had to be copied in an altered, see huge comment below for changes.
         """
-        if not self.is_configured(group.project):
+        if not self.is_configured(project=group.project, request=request):
             return self.render(self.not_configured_template)
+
+        if request.GET.get("user_autocomplete"):
+            return self.handle_autocomplete(request, group, **kwargs)
 
         prefix = self.get_conf_key()
         event = group.get_latest_event()
-        form = self.new_issue_form(request.POST or None, initial=self.get_initial_form_data(request, group, event))
 
+        form = self.new_issue_form(request.POST or None, initial=self.get_initial_form_data(request, group, event))
         ########################################################################
         # to allow the form to be submitted, but ignored so that dynamic fields
         # can change if the issuetype is different
@@ -92,18 +120,13 @@ class JIRAPlugin(IssuePlugin):
         ########################################################################
             if form.is_valid():
                 try:
-                    ############################################################
-                    # This is the only different part.
-                    # TODO: Find a workaround to remove this in the future. Hate Copypasta code.
-                    #
-                    issue_id, errors = self.create_issue(group, form.cleaned_data)
-                    if errors:
-                        form.errors.update(errors)
-                    #
-                    #
-                    ############################################################
+                    issue_id = self.create_issue(
+                        group=group,
+                        form_data=form.cleaned_data,
+                        request=request,
+                    )
                 except forms.ValidationError, e:
-                    form.errors['__all__'] = u'Error creating issue: %s' % e
+                    form.errors['__all__'] = [u'Error creating issue: %s' % e]
 
             if form.is_valid():
                 GroupMeta.objects.set_value(group, '%s:tid' % prefix, issue_id)
@@ -112,9 +135,21 @@ class JIRAPlugin(IssuePlugin):
         else:
             for name, field in form.fields.items():
                 form.errors[name] = form.error_class()
+
         context = {
             'form': form,
             'title': self.get_new_issue_title(),
             }
 
         return self.render(self.create_issue_template, context)
+
+class JSONResponse(Response):
+    """
+    Hack through the builtin response reliance on plugin.render for responses
+    by making a plain response out of a subclass of the expected type.
+    """
+    def __init__(self, object):
+        self.object = object
+
+    def respond(self, *args, **kwargs):
+        return HttpResponse(json.dumps(self.object), mimetype="application/json")

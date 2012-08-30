@@ -218,7 +218,7 @@ class JIRAIssueForm(forms.Form):
             fkwargs["widget"] = forms.Select()
         elif schema.get("items") == "user" or schema["type"] == "user":
             # TODO: Implement user autocompletes.
-            fkwargs["widget"] = forms.TextInput(attrs={'placeholder': 'type username exactly', 'class': 'span6'})
+            fkwargs["widget"] = forms.TextInput(attrs={'class': 'user-selector', 'data-autocomplete': field_meta.get("autoCompleteUrl")})
         elif schema["type"] in ["timetracking"]:
             # TODO: Implement timetracking (currently unsupported alltogether)
             return None
