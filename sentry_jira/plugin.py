@@ -23,6 +23,7 @@ class JIRAPlugin(IssuePlugin):
     cont_title = title
     conf_key = slug
     project_conf_form = JIRAOptionsForm
+    project_conf_template = "sentry_jira/project_conf.html"
     new_issue_form = JIRAIssueForm
     create_issue_template = 'sentry_jira/create_jira_issue.html'
 
