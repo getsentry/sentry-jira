@@ -59,7 +59,7 @@ class JIRAPlugin(IssuePlugin):
         jira_client = self.get_jira_client(group.project)
         issue_response = jira_client.create_issue(form_data)
 
-        if issue_response.status_code is 200:
+        if issue_response.status_code in [200, 201]: # weirdly inconsistent.
             return issue_response.json.get("key"), None
         else:
             # return some sort of error.
@@ -77,26 +77,6 @@ class JIRAPlugin(IssuePlugin):
     def get_issue_url(self, group, issue_id):
         instance = self.get_option('instance_url', group.project)
         return "%s/browse/%s" % (instance, issue_id)
-
-    def handle_autocomplete(self, request, group, **kwargs):
-        jira_client = self.get_jira_client(group.project)
-        url = urllib.unquote_plus(request.GET.get("user_autocomplete"))
-        parsed = list(urlparse.urlsplit(url))
-        query = urlparse.parse_qs(parsed[3])
-        query["query"] = request.GET.get("q")
-        if query.get('fieldName'):
-            query["fieldName"] = query["fieldName"][0] # for some reason its a list.
-        parsed[3] = urllib.urlencode(query)
-        final_url = urlparse.urlunsplit(parsed)
-        autocomplete_response = jira_client.get_autocomplete(final_url)
-        users = []
-        usersxml = autocomplete_response.xml.findAll("users")
-        for userxml in usersxml:
-            users.append({
-                'value': userxml.find("name").text,
-                'display': userxml.find("html").text})
-
-        return JSONResponse({'users': users})
 
     def view(self, request, group, **kwargs):
         """
@@ -124,11 +104,14 @@ class JIRAPlugin(IssuePlugin):
         ########################################################################
             if form.is_valid():
                 try:
-                    issue_id = self.create_issue(
+                    issue_id, error = self.create_issue(
                         group=group,
                         form_data=form.cleaned_data,
                         request=request,
                     )
+                    if error:
+                        form.errors.update(error)
+
                 except forms.ValidationError, e:
                     form.errors['__all__'] = [u'Error creating issue: %s' % e]
 
@@ -146,6 +129,55 @@ class JIRAPlugin(IssuePlugin):
             }
 
         return self.render(self.create_issue_template, context)
+
+    def handle_autocomplete(self, request, group, **kwargs):
+        """
+        Auto-complete JSON handler, Tries to handle multiple different types of
+        response from JIRA as only some of their backend is moved over to use
+        the JSON REST API, some of the responses come back in XML format and
+        pre-rendered HTML.
+        """
+
+        url = urllib.unquote_plus(request.GET.get("user_autocomplete"))
+        parsed = list(urlparse.urlsplit(url))
+        query = urlparse.parse_qs(parsed[3])
+
+        if "/rest/api/latest/user/" in url:  # its the JSON version of the autocompleter
+            isXML = False
+            query["username"] = request.GET.get('q')
+            del query['issueKey'] # some reason JIRA complains if this key is in the URL.
+            query["project"] = self.get_option('default_project', group.project)
+        else: # its the stupid XML version of the API.
+            isXML = True
+            query["query"] = request.GET.get("q")
+            if query.get('fieldName'):
+                query["fieldName"] = query["fieldName"][0] # for some reason its a list.
+
+        parsed[3] = urllib.urlencode(query)
+        final_url = urlparse.urlunsplit(parsed)
+
+        jira_client = self.get_jira_client(group.project)
+        autocomplete_response = jira_client.get_cached(final_url)
+        users = []
+
+        if isXML:
+            for userxml in autocomplete_response.xml.findAll("users"):
+                users.append({
+                    'value': userxml.find("name").text,
+                    'display': userxml.find("html").text,
+                    'needsRender':False,
+                    'q': request.GET.get('q')
+                })
+        else:
+            for user in autocomplete_response.json:
+                users.append({
+                    'value': user["name"],
+                    'display': "%s - %s (%s)" % (user["displayName"], user["emailAddress"], user["name"]),
+                    'needsRender': True,
+                    'q': request.GET.get('q')
+                })
+
+        return JSONResponse({'users': users})
 
 class JSONResponse(Response):
     """

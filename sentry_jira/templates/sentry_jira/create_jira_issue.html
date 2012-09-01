@@ -35,7 +35,7 @@
                 var $el = $(el);
                 $el.select2({
                     placeholder: "Select a User",
-                    minimumInputLength: 1,
+                    minimumInputLength: 0,
                     quietMillis: 100,
                     allowClear: true,
                     width: "460px",
@@ -46,10 +46,20 @@
                         results: function(data, page) { return { results: data.users } }
                     },
                     formatResult: function renderServerUser(user) {
-                        return $("<div/>").html(user.display).text().replace(/&nbsp;/g, " ");
+                        if (user.needsRender) {
+                            var q = user.q;
+                            return user.display.replace(new RegExp(q,"gi"), "<b>" + q + "</b>");
+                        } else {
+                            return $("<div/>").html(user.display).text().replace(/&nbsp;/g, " ");
+                        }
                     },
                     formatSelection: function(user) { return user.value; },
-                    id: function(user) { return user.value; }
+                    id: function    (user) { return user.value; },
+                    initSelection : function (element, callback) {
+                        var val = $(element).val();
+                        callback({'value': val});
+
+                    }
                 });
             });
 
