@@ -111,7 +111,10 @@ class JIRAPlugin(IssuePlugin):
         prefix = self.get_conf_key()
         event = group.get_latest_event()
 
-        form = self.new_issue_form(request.POST or None, initial=self.get_initial_form_data(request, group, event))
+        form = self.new_issue_form(
+            request.POST or None,
+            initial=self.get_initial_form_data(request, group, event),
+            ignored_fields=self.get_option("ignored_fields", group.project))
         ########################################################################
         # to allow the form to be submitted, but ignored so that dynamic fields
         # can change if the issuetype is different
