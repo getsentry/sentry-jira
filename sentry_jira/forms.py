@@ -191,9 +191,10 @@ class JIRAIssueForm(forms.Form):
                         v = {"name": v}
                     elif schema["type"] == "array" and schema.get("item") != "string":
                         v = [{"id": vx} for vx in v]
+                    elif schema.get("custom") == "com.atlassian.jira.plugin.system.customfieldtypes:textarea":
+                        v = v
                     elif schema.get("item") != "string":
                         v = {"id": v}
-
                     very_clean[field] = v
                 else:
                     # We don't want to pass blank data back to the API, so kill
