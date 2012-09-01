@@ -32,6 +32,11 @@ fields depending on which issue type you choose.
 
 .. image:: http://sentry-jira.s3.amazonaws.com/ss2.png
 
+You can now [0.5] use an auto-complete field to pull users from JIRA for any
+user field.
+
+.. image:: http://sentry-jira.s3.amazonaws.com/ss5.png
+
 Once the Issue has been linked through JIRA there's a link that you can follow from Sentry to
 go directly to the issue on your configurated JIRA instance.
 
