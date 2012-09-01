@@ -100,13 +100,15 @@ class JIRAIssueForm(forms.Form):
     )
 
     summary = forms.CharField(
-        label="Issue Summary",
+        label=_("Issue Summary"),
         widget=forms.TextInput(attrs={'class': 'span6'})
     )
     description = forms.CharField(
         widget=forms.Textarea(attrs={"class": 'span6'})
     )
-    fixVersions = forms.MultipleChoiceField()
+    fixVersions = forms.MultipleChoiceField(
+        label=_("Fix Version/s")
+    )
 
     def __init__(self, *args, **kwargs):
         ignored_fields = kwargs.pop("ignored_fields")
