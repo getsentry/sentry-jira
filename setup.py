@@ -11,7 +11,7 @@ f.close()
 
 setup(
     name='sentry-jira',
-    version='0.5.3',
+    version='0.5.4',
     author='Adam Thurlow',
     author_email='thurloat@gmail.com',
     url='http://github.com/thurloat/sentry-jira',
@@ -22,10 +22,10 @@ setup(
     install_requires=install_requires,
     entry_points={
         'sentry.apps': [
-            'github = sentry_github',
+            'jira = sentry_jira',
             ],
         'sentry.plugins': [
-            'github = sentry_github.plugin:GitHubPlugin'
+            'jira = sentry_jira.plugin:JIRAPlugin'
         ],
     },
     include_package_data=True,
