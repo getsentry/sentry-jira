@@ -1,6 +1,6 @@
 import urllib
 import urlparse
-from BeautifulSoup import BeautifulStoneSoup
+
 from django import forms
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
@@ -11,12 +11,13 @@ from sentry.plugins.bases.issue import IssuePlugin
 from sentry.utils import json
 from forms import JIRAOptionsForm, JIRAIssueForm
 from sentry_jira.jira import JIRAClient
+from sentry_jira import VERSION as PLUGINVERSION
 
 @register
 class JIRAPlugin(IssuePlugin):
     author = "Adam Thurlow"
     author_url = "https://github.com/thurloat/sentry-jira"
-    version = "0.5.5"
+    version = PLUGINVERSION
 
     slug = "jira"
     title = _("JIRA")
