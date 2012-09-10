@@ -11,14 +11,23 @@ f.close()
 
 setup(
     name='sentry-jira',
-    version='0.5.1',
+    version='0.5.3',
     author='Adam Thurlow',
     author_email='thurloat@gmail.com',
     url='http://github.com/thurloat/sentry-jira',
     description='A Sentry extension which creates JIRA issues from sentry events.',
     long_description=readme,
     license='BSD',
+    packages=find_packages(),
     install_requires=install_requires,
+    entry_points={
+        'sentry.apps': [
+            'github = sentry_github',
+            ],
+        'sentry.plugins': [
+            'github = sentry_github.plugin:GitHubPlugin'
+        ],
+    },
     include_package_data=True,
     zip_safe=False,
     classifiers=[
