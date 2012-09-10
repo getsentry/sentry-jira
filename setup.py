@@ -3,6 +3,8 @@ from setuptools import setup, find_packages
 
 install_requires = [
     'sentry>=4.10.0',
+    'requests>=0.13.9',
+    'BeautifulSoup>=3.2.1'
 ]
 
 f = open('README.rst')
@@ -11,7 +13,7 @@ f.close()
 
 setup(
     name='sentry-jira',
-    version='0.5.4',
+    version='0.5.5',
     author='Adam Thurlow',
     author_email='thurloat@gmail.com',
     url='http://github.com/thurloat/sentry-jira',

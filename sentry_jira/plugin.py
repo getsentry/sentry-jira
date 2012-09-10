@@ -15,8 +15,8 @@ from sentry_jira.jira import JIRAClient
 @register
 class JIRAPlugin(IssuePlugin):
     author = "Adam Thurlow"
-    author_url = "https://github.com/thurloat/sentry_jira"
-    version = "0.1a"
+    author_url = "https://github.com/thurloat/sentry-jira"
+    version = "0.5.5"
 
     slug = "jira"
     title = _("JIRA")
