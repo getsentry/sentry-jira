@@ -28,16 +28,19 @@ additional data on Issues.
 Configuration Tips
 ------------------
 
-- You should use `https://<instanceurl>` for the configuration since the plugin
- uses basic auth with the JIRA API to authenticate requests.
-- Ensure that the account you're using has a few key permissions:
- 1. CREATE_ISSUE
- 2. ASSIGN_ISSUE
- 3. USER_PICKER
-- You cannot link to a JIRA server behind a firewall, unless sentry is also
- behind that firewall.
-- You need to configure the plugin for each Sentry project, and you have the
- ability to assign a default JIRA project for each sentry project.
+ - You should use `https://<instanceurl>` for the configuration since the plugin
+   uses basic auth with the JIRA API to authenticate requests.
+
+ - Ensure that the account you're using has a few key permissions:
+    1. CREATE_ISSUE
+    2. ASSIGN_ISSUE
+    3. USER_PICKER
+
+ - You cannot link to a JIRA server behind a firewall, unless sentry is also
+   behind that firewall.
+
+ - You need to configure the plugin for each Sentry project, and you have the
+   ability to assign a default JIRA project for each sentry project.
 
 .. toctree::
    :maxdepth: 2
