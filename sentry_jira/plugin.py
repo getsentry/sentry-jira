@@ -5,13 +5,16 @@ from django import forms
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.utils.translation import ugettext_lazy as _
+from sentry.conf import settings
 from sentry.models import GroupMeta
 from sentry.plugins.base import Response
 from sentry.plugins.bases.issue import IssuePlugin
 from sentry.utils import json
-from forms import JIRAOptionsForm, JIRAIssueForm
-from sentry_jira.jira import JIRAClient
+
 from sentry_jira import VERSION as PLUGINVERSION
+from sentry_jira.forms import JIRAOptionsForm, JIRAIssueForm
+from sentry_jira.jira import JIRAClient
+
 
 class JIRAPlugin(IssuePlugin):
     author = "Adam Thurlow"
@@ -38,7 +41,7 @@ class JIRAPlugin(IssuePlugin):
         pw = self.get_option('password', project)
         return JIRAClient(instance, username, pw)
 
-    def get_initial_form_data(self, request, group, event):
+    def get_initial_form_data(self, request, group, event, **kwargs):
         initial = {
             'summary': self._get_group_title(request, group, event),
             'description': self._get_group_description(request, group, event),
@@ -51,7 +54,7 @@ class JIRAPlugin(IssuePlugin):
     def get_new_issue_title(self):
         return "Create JIRA Issue"
 
-    def create_issue(self, request, group, form_data):
+    def create_issue(self, request, group, form_data, **kwargs):
         """
         Since this is called wrapped in a try/catch on ValidationError to display
         an end user error, that's what I'll throw when JIRA doesn't like it.
@@ -74,7 +77,7 @@ class JIRAPlugin(IssuePlugin):
                 errdict["__all__"] = "Something went wrong, Sounds like a configuration issue: code %s" % issue_response.status_code
             return None, errdict
 
-    def get_issue_url(self, group, issue_id):
+    def get_issue_url(self, group, issue_id, **kwargs):
         instance = self.get_option('instance_url', group.project)
         return "%s/browse/%s" % (instance, issue_id)
 
@@ -83,8 +86,28 @@ class JIRAPlugin(IssuePlugin):
         Overriding the super to alter the error checking functionality. Method
         source had to be copied in an altered, see huge comment below for changes.
         """
-        if not self.is_configured(project=group.project, request=request):
-            return self.render(self.not_configured_template)
+        has_auth_configured = self.has_auth_configured()
+        if not (has_auth_configured and self.is_configured(project=group.project, request=request)):
+            if self.auth_provider:
+                required_auth_settings = settings.AUTH_PROVIDERS[self.auth_provider]
+            else:
+                required_auth_settings = None
+
+            return self.render(self.not_configured_template, {
+                'title': self.get_title(),
+                'project': group.project,
+                'has_auth_configured': has_auth_configured,
+                'required_auth_settings': required_auth_settings,
+                })
+
+        if self.needs_auth(project=group.project, request=request):
+            return self.render(self.needs_auth_template, {
+                'title': self.get_title(),
+                'project': group.project,
+                })
+
+        if GroupMeta.objects.get_value(group, '%s:tid' % self.get_conf_key(), None):
+            return None
 
         if request.GET.get("user_autocomplete"):
             return self.handle_autocomplete(request, group, **kwargs)
@@ -92,6 +115,7 @@ class JIRAPlugin(IssuePlugin):
         prefix = self.get_conf_key()
         event = group.get_latest_event()
 
+        # Added the ignored_fields to the new_issue_form call
         form = self.new_issue_form(
             request.POST or None,
             initial=self.get_initial_form_data(request, group, event),
