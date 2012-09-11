@@ -10,12 +10,14 @@ class JIRAOptionsForm(forms.Form):
     instance_url = forms.CharField(
         label=_("JIRA Instance URL"),
         widget=forms.TextInput(attrs={'class': 'span6', 'placeholder': 'e.g. "https://jira.atlassian.com"'}),
-        help_text=_("It must be visible to the Sentry server")
+        help_text=_("It must be visible to the Sentry server"),
+        required=True
     )
     username = forms.CharField(
         label=_("Username"),
         widget=forms.TextInput(attrs={'class': 'span6'}),
-        help_text=_("Ensure the JIRA user has admin perm. on the project")
+        help_text=_("Ensure the JIRA user has admin perm. on the project"),
+        required=True
     )
     password = forms.CharField(
         label=_("Password"),
@@ -73,6 +75,17 @@ class JIRAOptionsForm(forms.Form):
         configuration is right.
         """
         cd = self.cleaned_data
+
+        missing_fields = False
+        if not cd.get("instance_url"):
+            self.errors["instance_url"] = ["Instance URL is required"]
+            missing_fields = True
+        if not cd.get("username"):
+            self.errors["username"] = ["Username is required"]
+            missing_fields = True
+        if missing_fields:
+            raise ValidationError("Missing Fields")
+
         jira = JIRAClient(cd["instance_url"], cd["username"], cd["password"])
         sut_response = jira.get_priorities()
         if sut_response.status_code == 403 or sut_response.status_code == 401:
