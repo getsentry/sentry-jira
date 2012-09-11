@@ -1,3 +1,1 @@
-VERSION = "0.5.6"
-
-import plugin
+VERSION = "0.5.7"

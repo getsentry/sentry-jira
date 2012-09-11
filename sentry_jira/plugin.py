@@ -6,14 +6,13 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.utils.translation import ugettext_lazy as _
 from sentry.models import GroupMeta
-from sentry.plugins.base import register, Response
+from sentry.plugins.base import Response
 from sentry.plugins.bases.issue import IssuePlugin
 from sentry.utils import json
 from forms import JIRAOptionsForm, JIRAIssueForm
 from sentry_jira.jira import JIRAClient
 from sentry_jira import VERSION as PLUGINVERSION
 
-#@register
 class JIRAPlugin(IssuePlugin):
     author = "Adam Thurlow"
     author_url = "https://github.com/thurloat/sentry-jira"
