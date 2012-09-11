@@ -28,6 +28,8 @@ additional data on Issues.
 Configuration Tips
 ------------------
 
+ - JIRA >= 5.0 is required.
+
  - You should use `https://<instanceurl>` for the configuration since the plugin
    uses basic auth with the JIRA API to authenticate requests.
 
