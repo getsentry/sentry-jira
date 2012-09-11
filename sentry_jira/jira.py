@@ -67,7 +67,8 @@ class JIRAClient(object):
         cached_result = cache.get(key)
         if not cached_result:
             cached_result = self.make_request('get', full_url)
-            cache.set(key, cached_result)
+            if cached_result.status_code == 200:
+                cache.set(key, cached_result, 60)
         return cached_result
 
 
