@@ -13,7 +13,7 @@ from forms import JIRAOptionsForm, JIRAIssueForm
 from sentry_jira.jira import JIRAClient
 from sentry_jira import VERSION as PLUGINVERSION
 
-@register
+#@register
 class JIRAPlugin(IssuePlugin):
     author = "Adam Thurlow"
     author_url = "https://github.com/thurloat/sentry-jira"
