@@ -30,6 +30,15 @@ class JIRAPlugin(IssuePlugin):
     new_issue_form = JIRAIssueForm
     create_issue_template = 'sentry_jira/create_jira_issue.html'
 
+    # Adding resource links for forward compatibility, still need to integrate
+    # into existing `project_conf.html` template.
+    resource_links = [
+        ("Documentation", "http://sentry-jira.readthedocs.org/en/latest/"),
+        ("README", "https://raw.github.com/thurloat/sentry-jira/master/README.rst"),
+        ("Bug Tracker", "https://github.com/thurloat/sentry-jira/issues"),
+        ("Source", "http://github.com/thurloat/sentry-jira"),
+    ]
+
     def is_configured(self, request, project, **kwargs):
         if not self.get_option('default_project', project):
             return False
