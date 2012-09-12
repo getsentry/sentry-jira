@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 
 install_requires = [
-    'sentry>=5.0.5',
+    'sentry>=5.0.7',
     'requests>=0.13.9',
     'BeautifulSoup>=3.2.1'
 ]
