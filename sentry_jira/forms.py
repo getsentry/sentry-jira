@@ -120,7 +120,8 @@ class JIRAIssueForm(forms.Form):
         widget=forms.Textarea(attrs={"class": 'span6'})
     )
     fixVersions = forms.MultipleChoiceField(
-        label=_("Fix Version/s")
+        label=_("Fix Version/s"),
+        required=False
     )
 
     def __init__(self, *args, **kwargs):
