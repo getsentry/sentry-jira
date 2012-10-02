@@ -178,7 +178,7 @@ class JIRAPlugin(IssuePlugin):
         if "/rest/api/latest/user/" in url:  # its the JSON version of the autocompleter
             isXML = False
             query["username"] = request.GET.get('q')
-            del query['issueKey'] # some reason JIRA complains if this key is in the URL.
+            query.pop('issueKey', False) # some reason JIRA complains if this key is in the URL.
             query["project"] = self.get_option('default_project', group.project)
         else: # its the stupid XML version of the API.
             isXML = True
