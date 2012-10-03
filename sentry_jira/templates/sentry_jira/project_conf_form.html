@@ -8,11 +8,11 @@
                 <a class="close" data-dismiss="alert" href="javascript:void(0)">&times;</a>
             </div>
         {% endif %}
-        <form class="form-horizontal" action="" method="post" id="jira_issue_form">
+        <form class="form" action="" method="post" id="jira_issue_form">
             {% csrf_token %}
             {{ form|crispy }}
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">{% trans "Save Configuration" %}</button>
+                <button type="submit" class="btn btn-primary">{% trans "Save Changes" %}</button>
             </div>
         </form>
     </div>

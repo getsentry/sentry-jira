@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 
 install_requires = [
-    'sentry>=5.0.7',
+    'sentry>=5.0.14',
     'requests>=0.13.9',
     'BeautifulSoup>=3.2.1'
 ]
@@ -13,7 +13,7 @@ f.close()
 
 setup(
     name='sentry-jira',
-    version='0.6.2',
+    version='0.6.3',
     author='Adam Thurlow',
     author_email='thurloat@gmail.com',
     url='http://github.com/thurloat/sentry-jira',
