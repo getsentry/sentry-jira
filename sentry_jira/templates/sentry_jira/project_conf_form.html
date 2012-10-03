@@ -1,22 +1,12 @@
 {% load i18n crispy_forms_filters %}
 
-<div class="row-fluid">
-    <div class="span12">
-        {% if request.GET.success %}
-            <div class="alert alert-success">
-                {% trans "Changes to your project were saved successfully." %}
-                <a class="close" data-dismiss="alert" href="javascript:void(0)">&times;</a>
-            </div>
-        {% endif %}
-        <form class="form" action="" method="post" id="jira_issue_form">
-            {% csrf_token %}
-            {{ form|crispy }}
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">{% trans "Save Changes" %}</button>
-            </div>
-        </form>
+<form class="form" action="" method="post" id="jira_issue_form">
+    {% csrf_token %}
+    {{ form|crispy }}
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">{% trans "Save Changes" %}</button>
     </div>
-</div>
+</form>
 
 <link type="text/css" href="{% url sentry-media "sentry_jira" "select2/select2.css" %}" rel="stylesheet" />
 <script type="text/javascript" src="{% url sentry-media "sentry_jira" "select2/select2.js" %}"></script>
