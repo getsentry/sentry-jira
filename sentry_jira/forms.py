@@ -133,10 +133,10 @@ class JIRAIssueForm(forms.Form):
         versions = jira_client.get_versions(initial.get("project_key")).json
         meta = jira_client.get_create_meta(initial.get("project_key")).json
 
-        if not meta or not priorities or not versions:
+        if not meta or not priorities:
             super(JIRAIssueForm, self).__init__(*args, **kwargs)
             self.errors["__all__"] = [
-                "Error Communicating with JIRA, Please Check your configuration"]
+                "Error communicating with JIRA, Please check your configuration."]
             return
 
         project = meta["projects"][0]
