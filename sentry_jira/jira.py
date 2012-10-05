@@ -1,10 +1,10 @@
 import logging
 import requests
-import collections
 from sentry.utils import json
 from sentry.utils.cache import cache
 from simplejson.decoder import JSONDecodeError
 from BeautifulSoup import BeautifulStoneSoup
+from django.utils.datastructures import SortedDict
 
 log = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ class JIRAResponse(object):
         self.text = response_text
         self.xml = None
         try:
-            self.json = json.loads(response_text, object_pairs_hook=collections.OrderedDict)
+            self.json = json.loads(response_text, object_pairs_hook=SortedDict)
         except JSONDecodeError, e:
             if self.text[:5] == "<?xml":
                 # perhaps it's XML?
