@@ -119,10 +119,6 @@ class JIRAIssueForm(forms.Form):
     description = forms.CharField(
         widget=forms.Textarea(attrs={"class": 'span6'})
     )
-    fixVersions = forms.MultipleChoiceField(
-        label=_("Fix Version/s"),
-        required=False
-    )
 
     def __init__(self, *args, **kwargs):
         ignored_fields = kwargs.pop("ignored_fields")
@@ -160,11 +156,14 @@ class JIRAIssueForm(forms.Form):
 
         self.fields["project"].initial = project["id"]
         self.fields["issuetype"].choices = self.make_choices(issue_types)
-        self.fields["fixVersions"].choices = self.make_choices(versions)
 
         # apply ordering to fields based on some known built-in JIRA fields.
         # otherwise weird ordering occurs.
-        anti_gravity = {"priority": -150, "components": -100, "security": -50 }
+        anti_gravity = {"priority": -150,
+                        "fixVersions": -125,
+                        "components": -100,
+                        "security": -50 }
+
         dynamic_fields = self.issue_type.get("fields").keys()
         dynamic_fields.sort(key=lambda f: anti_gravity.get(f) or 0)
         # build up some dynamic fields based on required shit.
@@ -182,6 +181,8 @@ class JIRAIssueForm(forms.Form):
             # allowedValues for some reason doesn't pass enough info.
             self.fields["priority"].choices = self.make_choices(priorities)
 
+        if "fixVersions" in self.fields.keys():
+            self.fields["fixVersions"].choices = self.make_choices(versions)
 
     make_choices = lambda self, x: [(y["id"], y["name"]) for y in x] if x else []
 
@@ -210,6 +211,9 @@ class JIRAIssueForm(forms.Form):
                     schema = f["schema"]
                     if schema["type"] == "user" or schema.get('item') == "user":
                         v = {"name": v}
+                    elif schema.get("custom") == "com.atlassian.jira.plugin.system.customfieldtypes:multiuserpicker":
+                        # custom multi-picker
+                        v = [{"name": v}]
                     elif schema["type"] == "array" and schema.get("item") != "string":
                         v = [{"id": vx} for vx in v]
                     elif schema.get("custom") == "com.atlassian.jira.plugin.system.customfieldtypes:textarea":
@@ -220,10 +224,10 @@ class JIRAIssueForm(forms.Form):
                 else:
                     # We don't want to pass blank data back to the API, so kill
                     # None values
-                    del very_clean[field]
+                    very_clean.pop(field, None)
 
-        # cleanup form data from API
-        del very_clean["project_key"]
+        very_clean["issuetype"] = {"id": very_clean["issuetype"]}
+        very_clean.pop("project_key", None)
 
         return very_clean
 
@@ -247,7 +251,6 @@ class JIRAIssueForm(forms.Form):
             fkwargs["choices"] = self.make_choices(field_meta.get('allowedValues'))
             fkwargs["widget"] = forms.Select()
         elif schema.get("items") == "user" or schema["type"] == "user":
-            # TODO: Implement user autocompletes.
             fkwargs["widget"] = forms.TextInput(attrs={'class': 'user-selector', 'data-autocomplete': field_meta.get("autoCompleteUrl")})
         elif schema["type"] in ["timetracking"]:
             # TODO: Implement timetracking (currently unsupported alltogether)
