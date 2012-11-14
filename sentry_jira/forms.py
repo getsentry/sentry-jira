@@ -225,11 +225,12 @@ class JIRAIssueForm(forms.Form):
                     # We don't want to pass blank data back to the API, so kill
                     # None values
                     very_clean.pop(field, None)
-
-        if not hasattr(very_clean["issuetype"], "id"):
+        
+        if not (isinstance(very_clean["issuetype"], dict) 
+                and "id" in very_clean["issuetype"]):
             # something fishy is going on with this field, working on some JIRA
             # instances, and some not.
-            # testing against 5.1.5 does not convert (perhaps is no longer included
+            # testing against 5.1.5 and 5.1.4 does not convert (perhaps is no longer included
             # in the projectmeta API call, and would normally be converted in the
             # above clean method.)
             very_clean["issuetype"] = {"id": very_clean["issuetype"]}
