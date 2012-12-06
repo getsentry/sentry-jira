@@ -68,6 +68,16 @@ class JIRAOptionsForm(forms.Form):
             if not old_pw:
                 raise ValidationError("A Password is Required")
             return old_pw
+    
+    def clean_instance_url(self):
+        """
+        Strip forward slashes off any url passed through the form.
+        """
+        url = self.cleaned_data.get("instance_url")
+        if url and url[-1:] == "/":
+          return url[:-1]
+        else:
+          return url
 
     def clean(self):
         """
