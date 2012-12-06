@@ -8,7 +8,7 @@ from django.utils.datastructures import SortedDict
 
 log = logging.getLogger(__name__)
 
-CACHE_KEY = "SENTRY-JIRA-%s"
+CACHE_KEY = "SENTRY-JIRA-%s-%s"
 
 class JIRAClient(object):
     """
@@ -63,7 +63,7 @@ class JIRAClient(object):
         based on URL
         TODO: Implement GET attr in cache as well. (see self.create_meta for example)
         """
-        key = CACHE_KEY % full_url
+        key = CACHE_KEY % (full_url, self.instance_url)
         cached_result = cache.get(key)
         if not cached_result:
             cached_result = self.make_request('get', full_url)
