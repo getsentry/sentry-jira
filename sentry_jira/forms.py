@@ -68,7 +68,7 @@ class JIRAOptionsForm(forms.Form):
             if not old_pw:
                 raise ValidationError("A Password is Required")
             return old_pw
-    
+
     def clean_instance_url(self):
         """
         Strip forward slashes off any url passed through the form.
@@ -119,7 +119,8 @@ class JIRAIssueForm(forms.Form):
     project = forms.CharField(widget=forms.HiddenInput())
     issuetype = forms.ChoiceField(
         label="Issue Type",
-        help_text="Changing the issue type will refresh the page with the required form fields."
+        help_text="Changing the issue type will refresh the page with the required form fields.",
+        required=True
     )
 
     summary = forms.CharField(
@@ -139,11 +140,22 @@ class JIRAIssueForm(forms.Form):
         versions = jira_client.get_versions(initial.get("project_key")).json
         meta = jira_client.get_create_meta(initial.get("project_key")).json
 
+        # Early exit, somehow made it here without properly configuring the
+        # plugin.
         if not meta or not priorities:
             super(JIRAIssueForm, self).__init__(*args, **kwargs)
             self.errors["__all__"] = [
                 "Error communicating with JIRA, Please check your configuration."]
             return
+
+        # Early exit #2, no projects available.
+        if len(meta["projects"]) is 0:
+            super(JIRAIssueForm, self).__init__(*args, **kwargs)
+            self.errors["__all__"] = [
+                "Error in JIRA configuration, no projects found for user %s." %
+                  jira_client.username]
+            return
+
 
         project = meta["projects"][0]
         issue_types = project["issuetypes"]
@@ -210,6 +222,12 @@ class JIRAIssueForm(forms.Form):
         should render as.
         """
         very_clean = self.cleaned_data
+
+        # protect against mis-configured plugin submitting a form without an
+        # issuetype assigned.
+        if not very_clean.get("issuetype"):
+          raise ValidationError("Issue Type is required. Check your plugin configuration.")
+
         fs = self.issue_type["fields"]
         for field in fs.keys():
             f = fs[field]
@@ -235,8 +253,8 @@ class JIRAIssueForm(forms.Form):
                     # We don't want to pass blank data back to the API, so kill
                     # None values
                     very_clean.pop(field, None)
-        
-        if not (isinstance(very_clean["issuetype"], dict) 
+
+        if not (isinstance(very_clean["issuetype"], dict)
                 and "id" in very_clean["issuetype"]):
             # something fishy is going on with this field, working on some JIRA
             # instances, and some not.
