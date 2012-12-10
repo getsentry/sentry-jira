@@ -112,6 +112,12 @@ class JIRAOptionsForm(forms.Form):
 
         return cd
 
+# A list of common builtin custom field types for JIRA for easy reference.
+CUSTOM_FIELD_TYPES = {
+    "select": "com.atlassian.jira.plugin.system.customfieldtypes:select",
+    "textarea": "com.atlassian.jira.plugin.system.customfieldtypes:textarea", 
+    "multiuserpicker": "com.atlassian.jira.plugin.system.customfieldtypes:multiuserpicker"
+}
 
 class JIRAIssueForm(forms.Form):
 
@@ -206,7 +212,7 @@ class JIRAIssueForm(forms.Form):
         if "fixVersions" in self.fields.keys():
             self.fields["fixVersions"].choices = self.make_choices(versions)
 
-    make_choices = lambda self, x: [(y["id"], y["name"]) for y in x] if x else []
+    make_choices = lambda self, x: [(y["id"], y["name"] if y.has_key("name") else y["value"] ) for y in x] if x else []
 
     def clean_description(self):
         """
@@ -237,16 +243,20 @@ class JIRAIssueForm(forms.Form):
                 v = very_clean.get(field)
                 if v:
                     schema = f["schema"]
+                    if schema.get("type") == "string" and not schema.get("custom") == CUSTOM_FIELD_TYPES["select"]:
+                      continue # noop
                     if schema["type"] == "user" or schema.get('item') == "user":
                         v = {"name": v}
-                    elif schema.get("custom") == "com.atlassian.jira.plugin.system.customfieldtypes:multiuserpicker":
+                    elif schema.get("custom") == CUSTOM_FIELD_TYPES.get("multiuserpicker"):
                         # custom multi-picker
                         v = [{"name": v}]
                     elif schema["type"] == "array" and schema.get("item") != "string":
                         v = [{"id": vx} for vx in v]
-                    elif schema.get("custom") == "com.atlassian.jira.plugin.system.customfieldtypes:textarea":
+                    elif schema.get("custom") == CUSTOM_FIELD_TYPES.get("textarea"):
                         v = v
-                    elif schema.get("item") != "string":
+                    elif schema.get("type") != "string"\
+                      or schema.get("item") != "string"\
+                      or schema.get("custom") == CUSTOM_FIELD_TYPES.get("select"):
                         v = {"id": v}
                     very_clean[field] = v
                 else:
@@ -282,8 +292,9 @@ class JIRAIssueForm(forms.Form):
         }
 
         # override defaults based on field configuration
-        if schema["type"] in ["securitylevel", "priority"]:
-            fieldtype= forms.ChoiceField
+        if schema["type"] in ["securitylevel", "priority"] \
+          or schema.get("custom") == CUSTOM_FIELD_TYPES.get("select"):
+            fieldtype = forms.ChoiceField
             fkwargs["choices"] = self.make_choices(field_meta.get('allowedValues'))
             fkwargs["widget"] = forms.Select()
         elif schema.get("items") == "user" or schema["type"] == "user":
@@ -302,7 +313,7 @@ class JIRAIssueForm(forms.Form):
         # break this out, since multiple field types could additionally
         # be configured to use a custom property instead of a default.
         if schema.get("custom"):
-            if schema["custom"] == "com.atlassian.jira.plugin.system.customfieldtypes:textarea":
+            if schema["custom"] == CUSTOM_FIELD_TYPES.get("textarea"):
                 fkwargs["widget"] = forms.Textarea(attrs={'class': 'span6'})
 
         return fieldtype(**fkwargs)
