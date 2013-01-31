@@ -59,3 +59,27 @@ Go to your project's configuration page (Projects -> [Project]) and select the
 JIRA tab. Enter the JIRA credentials and Project configuration and save changes.
 Filling out the form is a two step process (one to fill in data, one to select
 project).
+
+More Documentation
+------------------
+
+Have a look at the readthedocs page for more detailed configuration steps and a
+changelog: http://sentry-jira.readthedocs.org/en/latest/
+
+
+License
+-------
+
+sentry-jira is licensed under the terms of the 3-clause BSD license.
+
+
+Contributing
+------------
+
+All contributions are welcome, including but not limited to:
+
+ - Documentation fixes / updates
+ - New features
+ - Bug fixes (see issues list)
+ - Update supported JIRA types as you come across them
+
