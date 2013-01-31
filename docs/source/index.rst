@@ -6,11 +6,6 @@
 Welcome to sentry-jira's documentation
 ======================================
 
-WIP
----
-
-Documentation is currently a work in progress
-
 
 Configuration Overview
 ----------------------
@@ -43,6 +38,9 @@ Configuration Tips
 
  - You need to configure the plugin for each Sentry project, and you have the
    ability to assign a default JIRA project for each sentry project.
+
+ - JIRA servers with self-signed SSL Certs are supported.
+
 
 .. toctree::
    :maxdepth: 2
