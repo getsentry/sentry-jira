@@ -79,7 +79,7 @@ Contributing
 All contributions are welcome, including but not limited to:
 
  - Documentation fixes / updates
- - New features
+ - New features (requests as well as implementations)
  - Bug fixes (see issues list)
  - Update supported JIRA types as you come across them
 
