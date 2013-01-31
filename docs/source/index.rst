@@ -57,7 +57,8 @@ support).
  
  - Removes self-included select2 library in favour of the one built into sentry
 
- - Now requires at least Sentry v. 5.3.3
+ - Now requires at least Sentry v. 5.3.3. If upgrading from a version older
+   than 5.1, check out the sentry upgrade guide http://sentry.readthedocs.org/en/latest/upgrading/index.html#upgrading-to-5-1
 
 0.6.12
 ######
