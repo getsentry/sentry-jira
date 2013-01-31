@@ -1,7 +1,6 @@
 import urllib
 import urlparse
 
-from django import forms
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.utils.translation import ugettext_lazy as _
@@ -119,8 +118,11 @@ class JIRAPlugin(IssuePlugin):
         if GroupMeta.objects.get_value(group, '%s:tid' % self.get_conf_key(), None):
             return None
 
+        #######################################################################
+        # Auto-complete handler
         if request.GET.get("user_autocomplete"):
             return self.handle_autocomplete(request, group, **kwargs)
+        #######################################################################
 
         prefix = self.get_conf_key()
         event = group.get_latest_event()
@@ -148,7 +150,7 @@ class JIRAPlugin(IssuePlugin):
             if form.is_valid():
                 GroupMeta.objects.set_value(group, '%s:tid' % prefix, issue_id)
 
-                return self.redirect(reverse('sentry-group', args=[group.project_id, group.pk]))
+                return self.redirect(reverse('sentry-group', args=[group.team.slug, group.project_id, group.pk]))
         else:
             for name, field in form.fields.items():
                 form.errors[name] = form.error_class()
