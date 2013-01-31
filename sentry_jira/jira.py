@@ -90,3 +90,6 @@ class JIRAResponse(object):
             # must be an awful code.
             self.json = None
         self.status_code = status_code
+
+    def __repr__(self):
+        return "<JIRAResponse<%s> %s>" % (self.status_code, self.text[:120])
