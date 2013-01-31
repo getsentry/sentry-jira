@@ -49,9 +49,9 @@ class JIRAClient(object):
         headers = {'content-type': 'application/json'}
         try:
             if method is 'get':
-                r = requests.get(url, params=payload, auth=auth, headers=headers)
+                r = requests.get(url, params=payload, auth=auth, headers=headers, verify=False)
             else:
-                r = requests.post(url, data=json.dumps(payload), auth=auth, headers=headers)
+                r = requests.post(url, data=json.dumps(payload), auth=auth, headers=headers, verify=False)
             return JIRAResponse(r.text, r.status_code)
         except Exception, e:
             logging.error('Error in request to %s: %s' % (url, e.message))
