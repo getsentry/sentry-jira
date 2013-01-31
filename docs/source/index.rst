@@ -50,7 +50,7 @@ that is installed alongside the plugin, so I'm keeping track of changes for
 versions of the plugins (along with which version of sentry they actually
 support).
 
-0.7.0
+0.7.1
 #####
 
  - Add support for self-signed SSL Certs for JIRA instances
