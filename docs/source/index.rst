@@ -42,6 +42,39 @@ Configuration Tips
  - JIRA servers with self-signed SSL Certs are supported.
 
 
+Change Log
+----------
+
+There have been a few changes recently that depend on the version of sentry
+that is installed alongside the plugin, so I'm keeping track of changes for
+versions of the plugins (along with which version of sentry they actually
+support).
+
+0.7.0
+#####
+
+ - Add support for self-signed SSL Certs for JIRA instances
+ 
+ - Removes self-included select2 library in favour of the one built into sentry
+
+ - Now requires at least Sentry v. 5.3.3
+
+0.6.12
+######
+
+ - Add support for the `select` custom field type in JIRA
+
+ - Fixed form -> API type conversions 
+
+ - Add more specific cache keys for hosted sentry support
+
+ - Supports Sentry v 5.0.x - 5.2.x
+
+0.6.x
+#####
+
+ - Old versions, don't use them.
+
 .. toctree::
    :maxdepth: 2
 
