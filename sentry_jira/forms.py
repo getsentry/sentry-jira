@@ -144,6 +144,10 @@ class JIRAIssueForm(forms.Form):
 
         priorities = jira_client.get_priorities().json
         versions = jira_client.get_versions(initial.get("project_key")).json
+
+        # Returns the metadata the configured JIRA instance requires for
+        # creating issues for a given project. 
+        # https://developer.atlassian.com/static/rest/jira/5.0.html#id200251
         meta = jira_client.get_create_meta(initial.get("project_key")).json
 
         # Early exit, somehow made it here without properly configuring the
@@ -162,7 +166,8 @@ class JIRAIssueForm(forms.Form):
                   jira_client.username]
             return
 
-
+        # Looking up the project meta by exact key, so it's always the first
+        # one.
         project = meta["projects"][0]
         issue_types = project["issuetypes"]
 
