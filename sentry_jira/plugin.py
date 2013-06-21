@@ -54,6 +54,7 @@ class JIRAPlugin(IssuePlugin):
             'summary': self._get_group_title(request, group, event),
             'description': self._get_group_description(request, group, event),
             'project_key': self.get_option('default_project', group.project),
+            'issuetype': request.POST.get('issuetype'),
             'jira_client': self.get_jira_client(group.project)
         }
 
