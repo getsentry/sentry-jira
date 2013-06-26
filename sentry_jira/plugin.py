@@ -133,12 +133,12 @@ class JIRAPlugin(IssuePlugin):
             request.POST or None,
             initial=self.get_initial_form_data(request, group, event),
             ignored_fields=self.get_option("ignored_fields", group.project))
-        ########################################################################
+        #######################################################################
         # to allow the form to be submitted, but ignored so that dynamic fields
         # can change if the issuetype is different
         #
         if request.POST and request.POST.get("changing_issuetype") == "0":
-        ########################################################################
+        #######################################################################
             if form.is_valid():
                 issue_id, error = self.create_issue(
                     group=group,
@@ -147,6 +147,18 @@ class JIRAPlugin(IssuePlugin):
                 )
                 if error:
                     form.errors.update(error)
+
+                    # Register field errors which were returned from the JIRA
+                    # API, but were marked as ignored fields in the
+                    # configuration with the global error reporter for the form
+                    ignored_errors = [v for k, v in error.items()
+                                      if k in form.ignored_fields.split(",")]
+                    if len(ignored_errors) > 0:
+                        errs = form.errors['__all__']
+                        errs.append("Validation Error on ignored field, check"
+                                    " your plugin settings.")
+                        errs.extend(ignored_errors)
+                        form.errors['__all__'] = errs
 
             if form.is_valid():
                 GroupMeta.objects.set_value(group, '%s:tid' % prefix, issue_id)

@@ -140,7 +140,7 @@ class JIRAIssueForm(forms.Form):
     )
 
     def __init__(self, *args, **kwargs):
-        ignored_fields = kwargs.pop("ignored_fields")
+        self.ignored_fields = kwargs.pop("ignored_fields")
         initial = kwargs.get("initial")
         jira_client = initial.pop("jira_client")
 
@@ -203,7 +203,7 @@ class JIRAIssueForm(forms.Form):
         dynamic_fields.sort(key=lambda f: anti_gravity.get(f) or 0)
         # build up some dynamic fields based on required shit.
         for field in dynamic_fields:
-            if field in self.fields.keys() or field in [x.strip() for x in ignored_fields.split(",")]:
+            if field in self.fields.keys() or field in [x.strip() for x in self.ignored_fields.split(",")]:
                 # don't overwrite the fixed fields for the form.
                 continue
             mb_field = self.build_dynamic_field(self.issue_type["fields"][field])
