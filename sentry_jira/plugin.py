@@ -99,7 +99,9 @@ class JIRAPlugin(IssuePlugin):
         has_auth_configured = self.has_auth_configured()
         if not (has_auth_configured and self.is_configured(project=group.project, request=request)):
             if self.auth_provider:
-                required_auth_settings = settings.AUTH_PROVIDERS[self.auth_provider]
+                providers = settings.AUTH_PROVIDERS if hasattr(
+                    settings, 'AUTH_PROVIDERS') else settings.SENTRY_AUTH_PROVIDERS
+                required_auth_settings = providers[self.auth_provider]
             else:
                 required_auth_settings = None
 
