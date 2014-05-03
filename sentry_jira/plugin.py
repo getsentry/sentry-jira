@@ -78,13 +78,13 @@ class JIRAPlugin(IssuePlugin):
             # return some sort of error.
             errdict = {"__all__": None}
             if issue_response.status_code == 500:
-                errdict["__all__"] = "JIRA Internal Server Error."
+                errdict["__all__"] = ["JIRA Internal Server Error."]
             elif issue_response.status_code == 400:
                 for k in issue_response.json["errors"].keys():
                     errdict[k] = [issue_response.json["errors"][k],]
-                errdict["__all__"] = issue_response.json["errorMessages"]
+                errdict["__all__"] = [issue_response.json["errorMessages"]]
             else:
-                errdict["__all__"] = "Something went wrong, Sounds like a configuration issue: code %s" % issue_response.status_code
+                errdict["__all__"] = ["Something went wrong, Sounds like a configuration issue: code %s" % issue_response.status_code]
             return None, errdict
 
     def get_issue_url(self, group, issue_id, **kwargs):
