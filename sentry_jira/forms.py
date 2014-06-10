@@ -81,7 +81,8 @@ class JIRAOptionsForm(forms.Form):
             default_project = initial.get('default_project')
             if default_project:
                 meta = jira.get_create_meta_for_project(default_project)
-                self.fields["default_issue_type"].choices = JIRAFormUtils.make_choices(meta["issuetypes"])
+                if meta:
+                    self.fields["default_issue_type"].choices = JIRAFormUtils.make_choices(meta["issuetypes"])
 
         if not project_safe:
             del self.fields["default_project"]

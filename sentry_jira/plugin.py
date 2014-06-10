@@ -270,7 +270,8 @@ class JIRAPlugin(IssuePlugin):
 
             project = jira_client.get_create_meta_for_project(project_key)
 
-            post_data = {'project': {'id': project['id']}}
+            if project:
+                post_data = {'project': {'id': project['id']}}
 
             initial = self.get_initial_form_data({}, group, event)
 
