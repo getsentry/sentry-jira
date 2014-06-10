@@ -258,7 +258,7 @@ class JIRAPlugin(IssuePlugin):
 
         auto_create = self.get_option('auto_create', group.project)
 
-        if auto_create and is_new:
+        if auto_create:
             return True
 
     def post_process(self, group, event, is_new, is_sample, **kwargs):
@@ -285,7 +285,7 @@ class JIRAPlugin(IssuePlugin):
 
             post_data['priority'] = {'id': default_priority}
             post_data['issuetype'] = {'id': default_issue_type}
-            
+
             issue_id, error = self.create_issue(
                 request={},
                 group=group,
