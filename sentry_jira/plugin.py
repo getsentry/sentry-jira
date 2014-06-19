@@ -281,7 +281,7 @@ class JIRAPlugin(IssuePlugin):
             interface = event.interfaces.get('sentry.interfaces.Exception')
 
             if interface:
-                post_data['description'] += "\n{code}%s{code}" % interface.to_string(event)
+                post_data['description'] += "\n{code}%s{code}" % interface.get_stacktrace(event, system_frames=False, max_frames=settings.SENTRY_MAX_STACKTRACE_FRAMES)
 
             default_priority = initial.get('priority')
             default_issue_type = initial.get('issuetype')
