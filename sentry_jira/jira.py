@@ -21,6 +21,7 @@ class JIRAClient(object):
     CREATE_URL = '/rest/api/2/issue'
     PRIORITIES_URL = '/rest/api/2/priority'
     VERSIONS_URL = '/rest/api/2/project/%s/versions'
+    HTTP_TIMEOUT = 5
 
     def __init__(self, instance_uri, username, password):
         self.instance_url = instance_uri
@@ -50,9 +51,12 @@ class JIRAClient(object):
         headers = {'content-type': 'application/json'}
         try:
             if method == 'get':
-                r = requests.get(url, params=payload, auth=auth, headers=headers, verify=False)
+                r = requests.get(url, params=payload, auth=auth, headers=headers,
+                                 verify=False, timeout=self.HTTP_TIMEOUT)
             else:
-                r = requests.post(url, data=json.dumps(payload), auth=auth, headers=headers, verify=False)
+                r = requests.post(url, data=json.dumps(payload), auth=auth,
+                                  headers=headers, verify=False,
+                                  timeout=self.HTTP_TIMEOUT)
             return JIRAResponse(r.text, r.status_code)
         except Exception, e:
             logging.error('Error in request to %s: %s' % (url, e.message))
