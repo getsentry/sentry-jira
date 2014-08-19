@@ -41,9 +41,9 @@ class JIRAOptionsForm(forms.Form):
 
         initial = kwargs.get("initial")
         project_safe = False
-        if initial:
+        if initial and initial.get("instance_url"):
             # make a connection to JIRA to fetch a default project.
-            jira = JIRAClient(initial.get("instance_url"), initial.get("username"), initial.get("password"))
+            jira = JIRAClient(initial["instance_url"], initial.get("username"), initial.get("password"))
             projects_response = jira.get_projects_list()
             if projects_response.status_code == 200:
                 projects = projects_response.json
@@ -148,7 +148,7 @@ class JIRAIssueForm(forms.Form):
         versions = jira_client.get_versions(initial.get("project_key")).json
 
         # Returns the metadata the configured JIRA instance requires for
-        # creating issues for a given project. 
+        # creating issues for a given project.
         # https://developer.atlassian.com/static/rest/jira/5.0.html#id200251
         meta = jira_client.get_create_meta(initial.get("project_key")).json
 
