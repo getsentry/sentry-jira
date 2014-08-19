@@ -1,4 +1,5 @@
 sentry.conf.py
 *.pyc
+*.egg-info
 .idea/
 env/
