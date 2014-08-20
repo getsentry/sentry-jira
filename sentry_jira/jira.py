@@ -21,6 +21,7 @@ class JIRAClient(object):
     CREATE_URL = '/rest/api/2/issue'
     PRIORITIES_URL = '/rest/api/2/priority'
     VERSIONS_URL = '/rest/api/2/project/%s/versions'
+    ISSUE_URL = '/rest/api/2/issue/%s'
     HTTP_TIMEOUT = 5
 
     def __init__(self, instance_uri, username, password):
@@ -58,6 +59,9 @@ class JIRAClient(object):
     def create_issue(self, raw_form_data):
         data = {'fields': raw_form_data}
         return self.make_request('post', self.CREATE_URL, payload=data)
+
+    def get_issue(self, key):
+        return self.make_request('get', self.ISSUE_URL % key)
 
     def make_request(self, method, url, payload=None):
         if url[:4] != "http":

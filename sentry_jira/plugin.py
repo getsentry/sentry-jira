@@ -98,6 +98,15 @@ class JIRAPlugin(IssuePlugin):
         instance = self.get_option('instance_url', group.project)
         return "%s/browse/%s" % (instance, issue_id)
 
+    def actions(self, request, group, action_list, **kwargs):
+        issue_key = GroupMeta.objects.get_value(group, '%s:tid' % self.get_conf_key(), None)
+        if not issue_key:
+            action_list.append((self.get_new_issue_title(), self.get_url(group)))
+        else:
+            action_list.append(('View JIRA: %s' % issue_key, self.get_issue_url(group, issue_key)))
+            action_list.append(('Update Issue Key', self.get_url(group)))
+        return action_list
+
     def view(self, request, group, **kwargs):
         """
         Overriding the super to alter the error checking functionality. Method
@@ -125,7 +134,9 @@ class JIRAPlugin(IssuePlugin):
                 'project': group.project,
                 })
 
-        if GroupMeta.objects.get_value(group, '%s:tid' % self.get_conf_key(), None):
+        issue_key = GroupMeta.objects.get_value(group, '%s:tid' % self.get_conf_key(), None)
+        if issue_key:
+            self.update_issue_key(group)
             return None
 
         #######################################################################
@@ -303,6 +314,21 @@ class JIRAPlugin(IssuePlugin):
 
             elif error:
                 logging.exception("Error creating JIRA ticket: %s" % error)
+
+    def update_issue_key(self, group):
+        gm = GroupMeta.objects.get(group=group, key='%s:tid' % self.get_conf_key())
+        client = self.get_jira_client(group.project)
+        resp = client.get_issue(gm.value)
+        if resp.json['key'] != gm.value:
+            gm.update(value=resp.json['key'])
+
+    def update_issue_keys(self, project):
+        groupmetas = GroupMeta.objects.filter(key='%s:tid' % self.get_conf_key())
+        client = self.get_jira_client(project)
+        for gm in groupmetas:
+            issue_key = gm.value
+            resp = client.get_issue(issue_key)
+            gm.update(value=resp.json['key'])
 
 class JSONResponse(Response):
     """
