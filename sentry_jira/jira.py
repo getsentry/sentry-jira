@@ -59,7 +59,7 @@ class JIRAClient(object):
                                   timeout=self.HTTP_TIMEOUT)
             return JIRAResponse(r.text, r.status_code)
         except Exception, e:
-            logging.error('Error in request to %s: %s' % (url, e.message))
+            logging.error('Error in request to %s: %s', url, e.message)
             return JIRAResponse("There was a problem reaching %s: %s" % (url, e.message), 500)
 
     def get_cached(self, full_url):
