@@ -137,7 +137,7 @@ class JIRAPlugin(IssuePlugin):
         issue_key = GroupMeta.objects.get_value(group, '%s:tid' % self.get_conf_key(), None)
         if issue_key:
             self.update_issue_key(group)
-            return None
+            return self.redirect(reverse('sentry-group', args=[group.team.slug, group.project_id, group.pk]))
 
         #######################################################################
         # Auto-complete handler
