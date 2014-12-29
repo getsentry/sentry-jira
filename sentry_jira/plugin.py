@@ -165,7 +165,7 @@ class JIRAPlugin(IssuePlugin):
             if form.is_valid():
                 GroupMeta.objects.set_value(group, '%s:tid' % prefix, issue_id)
 
-                return self.redirect(reverse('sentry-group', args=[group.team.slug, group.project_id, group.pk]))
+                return self.redirect(group.get_absolute_url())
         else:
             for name, field in form.fields.items():
                 form.errors[name] = form.error_class()
