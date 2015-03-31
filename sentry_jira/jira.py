@@ -56,11 +56,11 @@ class JIRAClient(object):
             if method == 'get':
                 r = session.get(
                     url, params=payload, auth=auth,
-                    verify_ssl=False, timeout=self.HTTP_TIMEOUT)
+                    verify=False, timeout=self.HTTP_TIMEOUT)
             else:
                 r = session.post(
                     url, json=payload, auth=auth,
-                    verify_ssl=False, timeout=self.HTTP_TIMEOUT)
+                    verify=False, timeout=self.HTTP_TIMEOUT)
             return JIRAResponse(r.text, r.status_code)
         except Exception, e:
             logging.error('Error in request to %s: %s', url, e.message)
