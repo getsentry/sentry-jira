@@ -2,6 +2,8 @@
 
 <form class="form" action="" method="post" id="jira_issue_form">
     {% csrf_token %}
+    <input type="hidden" name="plugin" value="{{ plugin.slug }}" />
+
     {{ form|crispy }}
     <div class="form-actions">
         <button type="submit" class="btn btn-primary">{% trans "Save Changes" %}</button>
