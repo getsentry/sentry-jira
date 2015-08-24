@@ -63,6 +63,9 @@ class JIRAPlugin(IssuePlugin):
     def get_new_issue_title(self):
         return "Create JIRA Issue"
 
+    def get_issue_label(self, group, issue_id, **kwargs):
+        return issue_id
+
     def create_issue(self, request, group, form_data, **kwargs):
         """
         Form validation errors recognized server-side raise ValidationErrors,
