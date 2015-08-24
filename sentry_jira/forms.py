@@ -296,7 +296,6 @@ class JIRAIssueForm(forms.Form):
             'required': field_meta["required"],
             'widget': forms.TextInput(attrs={'class': 'span6'})
         }
-
         # override defaults based on field configuration
         if (schema["type"] in ["securitylevel", "priority"]
                 or schema.get("custom") == CUSTOM_FIELD_TYPES.get("select")):
@@ -304,7 +303,10 @@ class JIRAIssueForm(forms.Form):
             fkwargs["choices"] = self.make_choices(field_meta.get('allowedValues'))
             fkwargs["widget"] = forms.Select()
         elif schema.get("items") == "user" or schema["type"] == "user":
-            fkwargs["widget"] = forms.TextInput(attrs={'class': 'user-selector', 'data-autocomplete': field_meta.get("autoCompleteUrl")})
+            fkwargs["widget"] = forms.TextInput(attrs={
+                'class': 'user-selector',
+                'data-autocomplete': field_meta.get("autoCompleteUrl")
+            })
         elif schema["type"] in ["timetracking"]:
             # TODO: Implement timetracking (currently unsupported alltogether)
             return None

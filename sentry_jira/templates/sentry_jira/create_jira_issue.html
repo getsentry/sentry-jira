@@ -1,91 +1,53 @@
 {% extends "sentry/plugins/bases/issue/create_issue.html" %}
 
+{% block main %}
+    <div id="jira_issue_form">
+        {{ block.super }}
+    </div>
+{% endblock %}
+
 {% block meta %}
     {{ block.super }}
     <script type="text/javascript">
         $(document).ready(function(){
-            // support legacy Sentry
-            if ($.fn.select2) {
-                // bind regular selects and multiselects to use select2
-                $("#jira_issue_form").find("select").select2({"width": "460px"});
+            // bind regular selects and multiselects to use select2
+            $("#jira_issue_form select").select2({"width": "460px"});
 
-                // user autocompletion!
-                $("#jira_issue_form").find("input.user-selector").each(function(i, el){
-                    var $el = $(el);
-                    $el.select2({
-                        placeholder: "Select a User",
-                        minimumInputLength: 0,
-                        quietMillis: 100,
-                        allowClear: true,
-                        width: "460px",
-                        ajax: {
-                            url: "?user_autocomplete=" + encodeURIComponent($el.attr('data-autocomplete')),
-                            dataType: 'json',
-                            data: function(q, page) { return { q: q }; },
-                            results: function(data, page) { return { results: data.users } }
-                        },
-                        formatResult: function renderServerUser(user) {
-                            if (user.needsRender) {
-                                var q = user.q;
-                                return user.display.replace(new RegExp(q,"gi"), "<b>" + q + "</b>");
-                            } else {
-                                return $("<div/>").html(user.display).text().replace(/&nbsp;/g, " ");
-                            }
-                        },
-                        formatSelection: function(user) { return user.value; },
-                        id: function    (user) { return user.value; },
-                        initSelection : function (element, callback) {
-                            var val = $(element).val();
-                            callback({'value': val});
-
+            // user autocompletion!
+            $("#jira_issue_form input.user-selector").each(function(i, el){
+                var $el = $(el);
+                $el.select2({
+                    placeholder: "Select a User",
+                    minimumInputLength: 0,
+                    quietMillis: 100,
+                    allowClear: true,
+                    width: "460px",
+                    ajax: {
+                        url: "?user_autocomplete=" + encodeURIComponent($el.attr('data-autocomplete')),
+                        dataType: 'json',
+                        data: function(q, page) { return { q: q }; },
+                        results: function(data, page) { return { results: data.users } }
+                    },
+                    formatResult: function renderServerUser(user) {
+                        if (user.needsRender) {
+                            var q = user.q;
+                            return user.display.replace(new RegExp(q,"gi"), "<b>" + q + "</b>");
+                        } else {
+                            return $("<div/>").html(user.display).text().replace(/&nbsp;/g, " ");
                         }
-                    });
-                });
-            } else if ($.fn.selectize) {
-                // bind regular selects and multiselects to use select2
-                $("#jira_issue_form").find("select").selectize({"width": "460px"});
+                    },
+                    formatSelection: function(user) { return user.value; },
+                    id: function    (user) { return user.value; },
+                    initSelection : function (element, callback) {
+                        var val = $(element).val();
+                        callback({'value': val});
 
-                // user autocompletion!
-                $("#jira_issue_form").find("input.user-selector").each(function(i, el){
-                    var $el = $(el);
-                    $el.selectize({
-                        valueField: 'value',
-                        labelField: 'display',
-                        searchField: 'display',
-                        create: false,
-                        placeholder: "Select a User",
-                        loadThrottle: 100,
-                        allowEmptyOption: true,
-                        width: "460px",
-                        load: function(query, callback) {
-                            if (!query.length) return callback();
-                            $.ajax({
-                                url: '?user_autocomplete=' + encodeURIComponent(query),
-                                type: 'GET',
-                                dataType: 'json',
-                                error: function() {
-                                    callback();
-                                },
-                                success: function(res) {
-                                    callback(res.users);
-                                }
-                            });
-                        },
-                        render: {
-                            option: function(item, escape) {
-                                if (user.needsRender) {
-                                    var q = item.q;
-                                    return item.display.replace(new RegExp(q,"gi"), "<b>" + q + "</b>");
-                                } else {
-                                    return $("<div/>").html(item.display).text().replace(/&nbsp;/g, " ");
-                                }
-                            },
-                        }
-                    });
+                    }
                 });
-            }
+            });
 
             // refresh the page with updated form based on issue type.
+            $("#jira_issue_form form").append('<input type="hidden" name="changing_issuetype" value="0" />');
             $("#id_issuetype").on("change", function(){
                 $("#changing_issuetype").val("1");
                 $("#jira_issue_form").submit();

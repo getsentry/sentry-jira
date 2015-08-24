@@ -27,7 +27,7 @@ class JIRAClient(object):
     HTTP_TIMEOUT = 5
 
     def __init__(self, instance_uri, username, password):
-        self.instance_url = instance_uri
+        self.instance_url = instance_uri.rstrip('/')
         self.username = username
         self.password = password
 
