@@ -6,6 +6,7 @@ from django.utils.translation import ugettext_lazy as _
 from sentry.models import GroupMeta
 from sentry.plugins.base import JSONResponse
 from sentry.plugins.bases.issue import IssuePlugin
+from sentry.utils.http import absolute_uri
 
 from sentry_jira import VERSION as PLUGINVERSION
 from sentry_jira.forms import JIRAOptionsForm, JIRAIssueForm
@@ -225,3 +226,19 @@ class JIRAPlugin(IssuePlugin):
                 })
 
         return JSONResponse({'users': users})
+
+    def _get_group_description(self, request, group, event):
+        # XXX: Mostly yanked from bases/issue:IssueTrackingPlugin,
+        # except change ``` code formatting to {code}
+        output = [
+            absolute_uri(group.get_absolute_url()),
+        ]
+        body = self._get_group_body(request, group, event)
+        if body:
+            output.extend([
+                '',
+                '{code}',
+                body,
+                '{code}',
+            ])
+        return '\n'.join(output)
