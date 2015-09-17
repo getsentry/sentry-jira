@@ -2,13 +2,10 @@ import urllib
 import urlparse
 
 from django.conf import settings
-from django.core.urlresolvers import reverse
-from django.http import HttpResponse
 from django.utils.translation import ugettext_lazy as _
 from sentry.models import GroupMeta
-from sentry.plugins.base import Response
+from sentry.plugins.base import JSONResponse
 from sentry.plugins.bases.issue import IssuePlugin
-from sentry.utils import json
 
 from sentry_jira import VERSION as PLUGINVERSION
 from sentry_jira.forms import JIRAOptionsForm, JIRAIssueForm
@@ -75,7 +72,7 @@ class JIRAPlugin(IssuePlugin):
         jira_client = self.get_jira_client(group.project)
         issue_response = jira_client.create_issue(form_data)
 
-        if issue_response.status_code in [200, 201]: # weirdly inconsistent.
+        if issue_response.status_code in (200, 201):  # weirdly inconsistent.
             return issue_response.json.get("key"), None
         else:
             # return some sort of error.
@@ -84,7 +81,7 @@ class JIRAPlugin(IssuePlugin):
                 errdict["__all__"] = ["JIRA Internal Server Error."]
             elif issue_response.status_code == 400:
                 for k in issue_response.json["errors"].keys():
-                    errdict[k] = [issue_response.json["errors"][k],]
+                    errdict[k] = [issue_response.json["errors"][k]]
                 errdict["__all__"] = [issue_response.json["errorMessages"]]
             else:
                 errdict["__all__"] = ["Something went wrong, Sounds like a configuration issue: code %s" % issue_response.status_code]
@@ -113,13 +110,13 @@ class JIRAPlugin(IssuePlugin):
                 'project': group.project,
                 'has_auth_configured': has_auth_configured,
                 'required_auth_settings': required_auth_settings,
-                })
+            })
 
         if self.needs_auth(project=group.project, request=request):
             return self.render(self.needs_auth_template, {
                 'title': self.get_title(),
                 'project': group.project,
-                })
+            })
 
         if GroupMeta.objects.get_value(group, '%s:tid' % self.get_conf_key(), None):
             return None
@@ -176,7 +173,7 @@ class JIRAPlugin(IssuePlugin):
         context = {
             'form': form,
             'title': self.get_new_issue_title(),
-            }
+        }
 
         return self.render(self.create_issue_template, context)
 
@@ -195,13 +192,13 @@ class JIRAPlugin(IssuePlugin):
         if "/rest/api/latest/user/" in url:  # its the JSON version of the autocompleter
             isXML = False
             query["username"] = request.GET.get('q')
-            query.pop('issueKey', False) # some reason JIRA complains if this key is in the URL.
+            query.pop('issueKey', False)  # some reason JIRA complains if this key is in the URL.
             query["project"] = self.get_option('default_project', group.project)
-        else: # its the stupid XML version of the API.
+        else:  # its the stupid XML version of the API.
             isXML = True
             query["query"] = request.GET.get("q")
             if query.get('fieldName'):
-                query["fieldName"] = query["fieldName"][0] # for some reason its a list.
+                query["fieldName"] = query["fieldName"][0]  # for some reason its a list.
 
         parsed[3] = urllib.urlencode(query)
         final_url = urlparse.urlunsplit(parsed)
@@ -215,7 +212,7 @@ class JIRAPlugin(IssuePlugin):
                 users.append({
                     'value': userxml.find("name").text,
                     'display': userxml.find("html").text,
-                    'needsRender':False,
+                    'needsRender': False,
                     'q': request.GET.get('q')
                 })
         else:
@@ -228,14 +225,3 @@ class JIRAPlugin(IssuePlugin):
                 })
 
         return JSONResponse({'users': users})
-
-class JSONResponse(Response):
-    """
-    Hack through the builtin response reliance on plugin.render for responses
-    by making a plain response out of a subclass of the expected type.
-    """
-    def __init__(self, object):
-        self.object = object
-
-    def respond(self, *args, **kwargs):
-        return HttpResponse(json.dumps(self.object), mimetype="application/json")
