@@ -24,6 +24,7 @@ class JIRAClient(object):
     CREATE_URL = '/rest/api/2/issue'
     PRIORITIES_URL = '/rest/api/2/priority'
     VERSIONS_URL = '/rest/api/2/project/%s/versions'
+    USERS_URL = '/rest/api/2/user/assignable/search'
     HTTP_TIMEOUT = 5
 
     def __init__(self, instance_uri, username, password):
@@ -42,6 +43,9 @@ class JIRAClient(object):
 
     def get_priorities(self):
         return self.get_cached(self.PRIORITIES_URL)
+
+    def get_users_for_project(self, project):
+        return self.make_request('get', self.USERS_URL, {'project': project})
 
     def create_issue(self, raw_form_data):
         data = {'fields': raw_form_data}

@@ -190,22 +190,29 @@ class JIRAPlugin(IssuePlugin):
         url = urllib.unquote_plus(request.GET.get("user_autocomplete"))
         parsed = list(urlparse.urlsplit(url))
         query = urlparse.parse_qs(parsed[3])
+        q = request.GET.get('q')
+
+        jira_client = self.get_jira_client(group.project)
+
+        project = self.get_option('default_project', group.project)
+        # shortcut case for no input since JIRA's API doesn't return all users
+        if q == '':
+            return self._get_all_users_for_project(jira_client, project)
 
         if "/rest/api/latest/user/" in url:  # its the JSON version of the autocompleter
             isXML = False
-            query["username"] = request.GET.get('q')
+            query["username"] = q
             query.pop('issueKey', False)  # some reason JIRA complains if this key is in the URL.
-            query["project"] = self.get_option('default_project', group.project)
+            query["project"] = project
         else:  # its the stupid XML version of the API.
             isXML = True
-            query["query"] = request.GET.get("q")
+            query["query"] = q
             if query.get('fieldName'):
                 query["fieldName"] = query["fieldName"][0]  # for some reason its a list.
 
         parsed[3] = urllib.urlencode(query)
         final_url = urlparse.urlunsplit(parsed)
 
-        jira_client = self.get_jira_client(group.project)
         autocomplete_response = jira_client.get_cached(final_url)
         users = []
 
@@ -215,7 +222,7 @@ class JIRAPlugin(IssuePlugin):
                     'value': userxml.find("name").text,
                     'display': userxml.find("html").text,
                     'needsRender': False,
-                    'q': request.GET.get('q')
+                    'q': q,
                 })
         else:
             for user in autocomplete_response.json:
@@ -223,9 +230,20 @@ class JIRAPlugin(IssuePlugin):
                     'value': user["name"],
                     'display': "%s - %s (%s)" % (user["displayName"], user["emailAddress"], user["name"]),
                     'needsRender': True,
-                    'q': request.GET.get('q')
+                    'q': q,
                 })
 
+        return JSONResponse({'users': users})
+
+    def _get_all_users_for_project(self, client, project):
+        users = []
+        for user in client.get_users_for_project(project).json:
+            users.append({
+                'value': user['name'],
+                'display': '%s - %s (%s)' % (user['displayName'], user['emailAddress'], user['name']),
+                'needsRender': True,
+                'q': '',
+            })
         return JSONResponse({'users': users})
 
     def _get_group_description(self, request, group, event):
