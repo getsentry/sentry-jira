@@ -3,7 +3,7 @@ import urlparse
 
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
-from sentry.models import GroupMeta
+from sentry.models import GroupMeta, Event
 from sentry.plugins.base import JSONResponse
 from sentry.plugins.bases.issue import IssuePlugin
 from sentry.utils.http import absolute_uri
@@ -130,6 +130,7 @@ class JIRAPlugin(IssuePlugin):
 
         prefix = self.get_conf_key()
         event = group.get_latest_event()
+        Event.objects.bind_nodes([event], 'data')
 
         # Added the ignored_fields to the new_issue_form call
         form = self.new_issue_form(
