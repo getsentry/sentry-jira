@@ -51,7 +51,7 @@ class JIRAOptionsForm(forms.Form):
     )
     auto_create = forms.BooleanField(
         label=_("Auto create JIRA tickets"),
-        help_text=_("Only enable if you want any new event to auto-create a JIRA ticket."),
+        help_text=_("Automatically create a JIRA ticket for EVERY new issue"),
         required=False
     )
 
@@ -86,7 +86,10 @@ class JIRAOptionsForm(forms.Form):
 
         if not project_safe:
             del self.fields["default_project"]
+            del self.fields["default_issue_type"]
+            del self.fields["default_priority"]
             del self.fields["ignored_fields"]
+            del self.fields["auto_create"]
 
     def clean_password(self):
         """
