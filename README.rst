@@ -2,7 +2,7 @@ sentry-jira
 ===========
 
 A flexible extension for Sentry which allows you to create issues in JIRA based on sentry events.
-It is capable of rendering and saving many custom fields, and will display the proper fields depending on 
+It is capable of rendering and saving many custom fields, and will display the proper fields depending on
 which issue type you are trying to create.
 
 Attention
@@ -15,32 +15,6 @@ I am developing this plugin against 2 different configurations of JIRA:
 
 Since JIRA is so configurable, I'm looking for lots of feedback of the different ways that this breaks
 with specialized configurations. Provide your feedback here: https://github.com/thurloat/sentry-jira/issues
- 
-Visual Walkthrough
-------------------
-
-Per-Project configurations
-
-.. image:: http://sentry-jira.s3.amazonaws.com/ss4.png
-
-When viewing a Sentry event, the Actions dropdown now contains a "Create JIRA Issue" button.
-
-.. image:: http://sentry-jira.s3.amazonaws.com/ss1.jpg
-
-The Create JIRA Issue form is fully customized based on your JIRA Configuration and loads different
-fields depending on which issue type you choose.
-
-.. image:: http://sentry-jira.s3.amazonaws.com/ss2.png
-
-You can now [0.5] use an auto-complete field to pull users from JIRA for any
-user field.
-
-.. image:: http://sentry-jira.s3.amazonaws.com/ss5.png
-
-Once the Issue has been linked through JIRA there's a link that you can follow from Sentry to
-go directly to the issue on your configurated JIRA instance.
-
-.. image:: http://sentry-jira.s3.amazonaws.com/ss3.jpg
 
 Installation
 ------------
@@ -55,10 +29,11 @@ Install the package via ``pip``:
 Configuration
 -------------
 
-Go to your project's configuration page (Projects -> [Project]) and select the
-JIRA tab. Enter the JIRA credentials and Project configuration and save changes.
-Filling out the form is a two step process (one to fill in data, one to select
-project).
+Go to your project's configuration page (Dashboard -> [Project] -> Settings), select the
+Issue Tracking tab, and then click the JIRA button under available integrations.
+
+Enter the JIRA credentials and Project configuration and save changes. Filling out the form is
+a two step process (one to fill in data, one to enter additional options).
 
 More Documentation
 ------------------
