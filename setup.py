@@ -2,13 +2,15 @@
 from setuptools import setup, find_packages
 
 install_requires = [
-    'sentry>=6.0.0',
+    'sentry>=7.0.0',
     'BeautifulSoup>=3.2.1'
 ]
 
-f = open('README.rst')
-readme = f.read()
-f.close()
+tests_require = [
+    'exam',
+    'flake8>=2.0,<2.1',
+    'responses',
+]
 
 setup(
     name='sentry-jira',
@@ -17,10 +19,13 @@ setup(
     author_email='thurloat@gmail.com',
     url='http://github.com/thurloat/sentry-jira',
     description='A Sentry extension which creates JIRA issues from sentry events.',
-    long_description=readme,
+    long_description=open('README.rst').read(),
     license='BSD',
     packages=find_packages(),
     install_requires=install_requires,
+    extras_require={
+        'tests': tests_require,
+    },
     entry_points={
         'sentry.apps': [
             'sentry_jira = sentry_jira',
