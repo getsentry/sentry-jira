@@ -47,7 +47,7 @@ class JIRAOptionsForm(forms.Form):
     )
     default_issue_type = forms.ChoiceField(
         label=_("Default Issue Type"),
-        required=False
+        required=False,
     )
     auto_create = forms.BooleanField(
         label=_("Auto create JIRA tickets"),

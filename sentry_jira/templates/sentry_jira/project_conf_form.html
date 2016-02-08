@@ -1,5 +1,9 @@
 {% load i18n crispy_forms_filters %}
 
+<div class="alert alert-info alert-block">
+    If you change login credentials or the default project you will need to save changes in order to populate new options.
+</div>
+
 <form class="form" action="" method="post" id="jira_issue_form">
     {% csrf_token %}
     <input type="hidden" name="plugin" value="{{ plugin.slug }}" />
