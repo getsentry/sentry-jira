@@ -1,3 +1,4 @@
+import logging
 import urllib
 import urlparse
 
@@ -36,6 +37,22 @@ class JIRAPlugin(IssuePlugin):
         ("Source", "http://github.com/thurloat/sentry-jira"),
     ]
 
+    def _get_group_description(self, request, group, event):
+        # XXX: Mostly yanked from bases/issue:IssueTrackingPlugin,
+        # except change ``` code formatting to {code}
+        output = [
+            absolute_uri(group.get_absolute_url()),
+        ]
+        body = self._get_group_body(request, group, event)
+        if body:
+            output.extend([
+                '',
+                '{code}',
+                body,
+                '{code}',
+            ])
+        return '\n'.join(output)
+
     def is_configured(self, request, project, **kwargs):
         if not self.get_option('default_project', project):
             return False
@@ -51,10 +68,16 @@ class JIRAPlugin(IssuePlugin):
         initial = {
             'summary': self._get_group_title(request, group, event),
             'description': self._get_group_description(request, group, event),
-            'project_key': self.get_option('default_project', group.project),
-            'issuetype': request.POST.get('issuetype'),
-            'jira_client': self.get_jira_client(group.project)
         }
+
+        default_priority = self.get_option('default_priority', group.project)
+        if default_priority:
+            initial['priority'] = default_priority
+
+        default_issue_type = self.get_option('default_issue_type', group.project)
+
+        if default_issue_type:
+            initial['issuetype'] = default_issue_type
 
         return initial
 
@@ -92,6 +115,15 @@ class JIRAPlugin(IssuePlugin):
         instance = self.get_option('instance_url', group.project)
         return "%s/browse/%s" % (instance, issue_id)
 
+    def actions(self, request, group, action_list, **kwargs):
+        issue_key = GroupMeta.objects.get_value(group, '%s:tid' % self.get_conf_key(), None)
+        if not issue_key:
+            action_list.append((self.get_new_issue_title(), self.get_url(group)))
+        else:
+            action_list.append(('View JIRA: %s' % issue_key, self.get_issue_url(group, issue_key)))
+            action_list.append(('Update Issue Key', self.get_url(group)))
+        return action_list
+
     def view(self, request, group, **kwargs):
         """
         Overriding the super to alter the error checking functionality. Method
@@ -119,13 +151,15 @@ class JIRAPlugin(IssuePlugin):
                 'project': group.project,
             })
 
-        if GroupMeta.objects.get_value(group, '%s:tid' % self.get_conf_key(), None):
-            return None
+        issue_key = GroupMeta.objects.get_value(group, '%s:tid' % self.get_conf_key(), None)
+        if issue_key:
+            self.update_issue_key(group)
+            return self.redirect(reverse('sentry-group', args=[group.team.slug, group.project_id, group.pk]))
 
         #######################################################################
         # Auto-complete handler
         if request.GET.get("user_autocomplete"):
-            return self.handle_autocomplete(request, group, **kwargs)
+            return self.handle_user_autocomplete(request, group, **kwargs)
         #######################################################################
 
         prefix = self.get_conf_key()
@@ -136,6 +170,8 @@ class JIRAPlugin(IssuePlugin):
         form = self.new_issue_form(
             request.POST or None,
             initial=self.get_initial_form_data(request, group, event),
+            jira_client=self.get_jira_client(group.project),
+            project_key=self.get_option('default_project', group.project),
             ignored_fields=self.get_option("ignored_fields", group.project))
         #######################################################################
         # to allow the form to be submitted, but ignored so that dynamic fields
@@ -179,7 +215,7 @@ class JIRAPlugin(IssuePlugin):
 
         return self.render(self.create_issue_template, context)
 
-    def handle_autocomplete(self, request, group, **kwargs):
+    def handle_user_autocomplete(self, request, group, **kwargs):
         """
         Auto-complete JSON handler, Tries to handle multiple different types of
         response from JIRA as only some of their backend is moved over to use
@@ -246,18 +282,86 @@ class JIRAPlugin(IssuePlugin):
             })
         return JSONResponse({'users': users})
 
-    def _get_group_description(self, request, group, event):
-        # XXX: Mostly yanked from bases/issue:IssueTrackingPlugin,
-        # except change ``` code formatting to {code}
-        output = [
-            absolute_uri(group.get_absolute_url()),
-        ]
-        body = self._get_group_body(request, group, event)
-        if body:
-            output.extend([
-                '',
-                '{code}',
-                body,
-                '{code}',
-            ])
-        return '\n'.join(output)
+    def handle_issue_type_autocomplete(self, request, group):
+        project = request.GET("project")
+        jira_client = self.get_jira_client(group.project)
+        meta = jira_client.get_meta_for_project(project)
+
+        issue_types = []
+        for issue_type in meta.json:
+                issue_types.append({
+                    'value': issue_type["name"],
+                    'display': issue_type["name"],
+                    'needsRender': True,
+                    'q': request.GET.get('q')
+                })
+
+        return issue_types
+
+    def should_create(self, group, event, is_new):
+
+        if GroupMeta.objects.get_value(group, '%s:tid' % self.get_conf_key(), None):
+            return False
+
+        auto_create = self.get_option('auto_create', group.project)
+
+        if auto_create and is_new:
+            return True
+
+    def post_process(self, group, event, is_new, is_sample, **kwargs):
+        if self.should_create(group, event, is_new):
+
+            jira_client = self.get_jira_client(group.project)
+
+            project_key = self.get_option('default_project', group.project)
+
+            project = jira_client.get_create_meta_for_project(project_key)
+
+            if project:
+                post_data = {'project': {'id': project['id']}}
+
+            initial = self.get_initial_form_data({}, group, event)
+
+            post_data['summary'] = initial['summary']
+            post_data['description'] = initial['description']
+
+            interface = event.interfaces.get('sentry.interfaces.Exception')
+
+            if interface:
+                post_data['description'] += "\n{code}%s{code}" % interface.get_stacktrace(event, system_frames=False, max_frames=settings.SENTRY_MAX_STACKTRACE_FRAMES)
+
+            default_priority = initial.get('priority')
+            default_issue_type = initial.get('issuetype')
+
+            if not default_priority or not default_issue_type:
+                raise Exception("Default priority and issue type not configured...cannot auto create JIRA ticket.")
+
+            post_data['priority'] = {'id': default_priority}
+            post_data['issuetype'] = {'id': default_issue_type}
+
+            issue_id, error = self.create_issue(
+                request={},
+                group=group,
+                form_data=post_data)
+
+            if issue_id and not error:
+                prefix = self.get_conf_key()
+                GroupMeta.objects.set_value(group, '%s:tid' % prefix, issue_id)
+
+            elif error:
+                logging.exception("Error creating JIRA ticket: %s" % error)
+
+    def update_issue_key(self, group):
+        gm = GroupMeta.objects.get(group=group, key='%s:tid' % self.get_conf_key())
+        client = self.get_jira_client(group.project)
+        resp = client.get_issue(gm.value)
+        if resp.json['key'] != gm.value:
+            gm.update(value=resp.json['key'])
+
+    def update_issue_keys(self, project):
+        groupmetas = GroupMeta.objects.filter(key='%s:tid' % self.get_conf_key())
+        client = self.get_jira_client(project)
+        for gm in groupmetas:
+            issue_key = gm.value
+            resp = client.get_issue(issue_key)
+            gm.update(value=resp.json['key'])

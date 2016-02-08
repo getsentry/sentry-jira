@@ -25,6 +25,7 @@ class JIRAClient(object):
     PRIORITIES_URL = '/rest/api/2/priority'
     VERSIONS_URL = '/rest/api/2/project/%s/versions'
     USERS_URL = '/rest/api/2/user/assignable/search'
+    ISSUE_URL = '/rest/api/2/issue/%s'
     HTTP_TIMEOUT = 5
 
     def __init__(self, instance_uri, username, password):
@@ -38,6 +39,21 @@ class JIRAClient(object):
     def get_create_meta(self, project):
         return self.make_request('get', self.META_URL, {'projectKeys': project, 'expand': 'projects.issuetypes.fields'})
 
+    def get_create_meta_for_project(self, project):
+        response = self.get_create_meta(project)
+
+        if not response:
+            raise Exception("Could not find project")
+
+        metas = response.json
+
+        if len(metas["projects"]) > 1:
+            raise Exception("More than one project found")
+
+        if len(metas["projects"]) == 1:
+            meta = metas["projects"][0]
+            return meta
+
     def get_versions(self, project):
         return self.get_cached(self.VERSIONS_URL % project)
 
@@ -50,6 +66,9 @@ class JIRAClient(object):
     def create_issue(self, raw_form_data):
         data = {'fields': raw_form_data}
         return self.make_request('post', self.CREATE_URL, payload=data)
+
+    def get_issue(self, key):
+        return self.make_request('get', self.ISSUE_URL % key)
 
     def make_request(self, method, url, payload=None):
         if url[:4] != "http":
@@ -66,7 +85,7 @@ class JIRAClient(object):
                     url, json=payload, auth=auth,
                     verify=False, timeout=self.HTTP_TIMEOUT)
             return JIRAResponse(r.text, r.status_code)
-        except Exception, e:
+        except Exception as e:
             logging.error('Error in request to %s: %s', url, e.message)
             return JIRAResponse("There was a problem reaching %s: %s" % (url, e.message), 500)
 
