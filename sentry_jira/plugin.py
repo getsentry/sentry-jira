@@ -299,57 +299,63 @@ class JIRAPlugin(IssuePlugin):
         return issue_types
 
     def should_create(self, group, event, is_new):
+        if not is_new:
+            return False
 
+        if not self.get_option('auto_create', group.project):
+            return False
+
+        # XXX(dcramer): Sentry doesn't expect GroupMeta referenced here so we
+        # need to populate the cache
+        GroupMeta.objects.populate_cache([group])
         if GroupMeta.objects.get_value(group, '%s:tid' % self.get_conf_key(), None):
             return False
 
-        auto_create = self.get_option('auto_create', group.project)
-
-        if auto_create and is_new:
-            return True
+        return True
 
     def post_process(self, group, event, is_new, is_sample, **kwargs):
-        if self.should_create(group, event, is_new):
+        if not self.should_create(group, event, is_new):
+            return
 
-            jira_client = self.get_jira_client(group.project)
+        jira_client = self.get_jira_client(group.project)
 
-            project_key = self.get_option('default_project', group.project)
+        project_key = self.get_option('default_project', group.project)
 
-            project = jira_client.get_create_meta_for_project(project_key)
+        project = jira_client.get_create_meta_for_project(project_key)
 
-            if project:
-                post_data = {'project': {'id': project['id']}}
+        if project:
+            post_data = {'project': {'id': project['id']}}
 
-            initial = self.get_initial_form_data({}, group, event)
+        initial = self.get_initial_form_data({}, group, event)
 
-            post_data['summary'] = initial['summary']
-            post_data['description'] = initial['description']
+        post_data['summary'] = initial['summary']
+        post_data['description'] = initial['description']
 
-            interface = event.interfaces.get('sentry.interfaces.Exception')
+        interface = event.interfaces.get('sentry.interfaces.Exception')
 
-            if interface:
-                post_data['description'] += "\n{code}%s{code}" % interface.get_stacktrace(event, system_frames=False, max_frames=settings.SENTRY_MAX_STACKTRACE_FRAMES)
+        if interface:
+            post_data['description'] += "\n{code}%s{code}" % interface.get_stacktrace(event, system_frames=False, max_frames=settings.SENTRY_MAX_STACKTRACE_FRAMES)
 
-            default_priority = initial.get('priority')
-            default_issue_type = initial.get('issuetype')
+        default_priority = initial.get('priority')
+        default_issue_type = initial.get('issuetype')
 
-            if not default_priority or not default_issue_type:
-                raise Exception("Default priority and issue type not configured...cannot auto create JIRA ticket.")
+        if not default_priority or not default_issue_type:
+            raise Exception("Default priority and issue type not configured...cannot auto create JIRA ticket.")
 
-            post_data['priority'] = {'id': default_priority}
-            post_data['issuetype'] = {'id': default_issue_type}
+        post_data['priority'] = {'id': default_priority}
+        post_data['issuetype'] = {'id': default_issue_type}
 
-            issue_id, error = self.create_issue(
-                request={},
-                group=group,
-                form_data=post_data)
+        issue_id, error = self.create_issue(
+            request={},
+            group=group,
+            form_data=post_data)
 
-            if issue_id and not error:
-                prefix = self.get_conf_key()
-                GroupMeta.objects.set_value(group, '%s:tid' % prefix, issue_id)
+        if issue_id and not error:
+            prefix = self.get_conf_key()
+            GroupMeta.objects.set_value(group, '%s:tid' % prefix, issue_id)
 
-            elif error:
-                logging.exception("Error creating JIRA ticket: %s" % error)
+        elif error:
+            logging.exception("Error creating JIRA ticket: %s" % error)
 
     def update_issue_key(self, group):
         gm = GroupMeta.objects.get(group=group, key='%s:tid' % self.get_conf_key())
