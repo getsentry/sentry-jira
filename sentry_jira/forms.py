@@ -115,6 +115,14 @@ class JIRAOptionsForm(forms.Form):
         else:
             return url
 
+    def clean_auto_create(self):
+        cd = self.cleaned_data
+        if not cd.get('auto_create'):
+            return False
+        if not (cd.get('default_priority') and cd.get('default_issue_type')):
+            raise ValidationError("Default priority and issue type must be configured for.")
+        return cd['auto_create']
+
     def clean(self):
         """
         try and build a JIRAClient and make a random call to make sure the
