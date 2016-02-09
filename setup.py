@@ -29,7 +29,7 @@ setup(
     entry_points={
         'sentry.apps': [
             'sentry_jira = sentry_jira',
-            ],
+        ],
         'sentry.plugins': [
             'sentry_jira = sentry_jira.plugin:JIRAPlugin'
         ],
