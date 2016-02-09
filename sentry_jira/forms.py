@@ -29,7 +29,6 @@ class JIRAOptionsForm(forms.Form):
     password = forms.CharField(
         label=_("Password"),
         widget=forms.PasswordInput(attrs={'class': 'span6'}),
-        help_text=_("Only enter a value if you wish to change it"),
         required=False
     )
     default_project = forms.ChoiceField(
@@ -55,12 +54,15 @@ class JIRAOptionsForm(forms.Form):
         required=False
     )
 
-    def __init__(self, *args, **kwargs):
-        super(JIRAOptionsForm, self).__init__(*args, **kwargs)
+    def __init__(self, data=None, *args, **kwargs):
+        super(JIRAOptionsForm, self).__init__(data=data, *args, **kwargs)
 
-        initial = kwargs.get("initial")
+        initial = kwargs.get("initial") or {}
+        for key, value in self.data.items():
+            initial[key.lstrip(self.prefix or '')] = value
+
         project_safe = False
-        if initial and initial.get("instance_url"):
+        if initial.get("instance_url"):
             # make a connection to JIRA to fetch a default project.
             jira = JIRAClient(initial["instance_url"], initial.get("username"), initial.get("password"))
             projects_response = jira.get_projects_list()
@@ -83,6 +85,11 @@ class JIRAOptionsForm(forms.Form):
                 meta = jira.get_create_meta_for_project(default_project)
                 if meta:
                     self.fields["default_issue_type"].choices = JIRAFormUtils.make_choices(meta["issuetypes"])
+
+        if not initial.get('password'):
+            self.fields['password'].required = True
+        else:
+            self.fields['password'].help_text = _("Only enter a new password if you wish to update the stored value")
 
         if not project_safe:
             del self.fields["default_project"]
@@ -120,7 +127,7 @@ class JIRAOptionsForm(forms.Form):
         if not cd.get('auto_create'):
             return False
         if not (cd.get('default_priority') and cd.get('default_issue_type')):
-            raise ValidationError("Default priority and issue type must be configured for.")
+            raise ValidationError("Default priority and issue type must be configured.")
         return cd['auto_create']
 
     def clean(self):
@@ -140,19 +147,20 @@ class JIRAOptionsForm(forms.Form):
         if missing_fields:
             raise ValidationError("Missing Fields")
 
-        jira = JIRAClient(cd["instance_url"], cd["username"], cd["password"])
-        sut_response = jira.get_priorities()
-        if sut_response.status_code == 403 or sut_response.status_code == 401:
-            self.errors["username"] = ["Username might be incorrect"]
-            self.errors["password"] = ["Password might be incorrect"]
-            raise ValidationError("Unable to connect to JIRA: %s, if you have "
-                                  "tried and failed multiple times you may have"
-                                  " to enter a CAPTCHA in JIRA to re-enable API"
-                                  " logins." % sut_response.status_code)
-        elif sut_response.status_code == 500 or sut_response.json is None:
-            raise ValidationError("Unable to connect to JIRA: Bad Response")
-        elif sut_response.status_code > 200:
-            raise ValidationError("Unable to connect to JIRA: %s" % sut_response.status_code)
+        if cd.get("password"):
+            jira = JIRAClient(cd["instance_url"], cd["username"], cd["password"])
+            sut_response = jira.get_priorities()
+            if sut_response.status_code == 403 or sut_response.status_code == 401:
+                self.errors["username"] = ["Username might be incorrect"]
+                self.errors["password"] = ["Password might be incorrect"]
+                raise ValidationError("Unable to connect to JIRA: %s, if you have "
+                                      "tried and failed multiple times you may have"
+                                      " to enter a CAPTCHA in JIRA to re-enable API"
+                                      " logins." % sut_response.status_code)
+            elif sut_response.status_code == 500 or sut_response.json is None:
+                raise ValidationError("Unable to connect to JIRA: Bad Response")
+            elif sut_response.status_code > 200:
+                raise ValidationError("Unable to connect to JIRA: %s" % sut_response.status_code)
 
         return cd
 
