@@ -4,7 +4,6 @@ import responses
 
 from django.http import HttpRequest
 from exam import fixture
-from sentry.models import GroupMeta
 from sentry.testutils import TestCase
 
 from sentry_jira.plugin import JIRAPlugin
@@ -28,7 +27,7 @@ class JIRAPluginTest(TestCase):
 
         request = HttpRequest()
         group = self.create_group(message='Hello world', culprit='foo.bar')
-        event = self.create_event(group=group, message='Hello world')
+        self.create_event(group=group, message='Hello world')
 
         form_data = {
 

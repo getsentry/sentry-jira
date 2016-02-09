@@ -3,6 +3,7 @@ import urllib
 import urlparse
 
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
 from sentry.models import GroupMeta, Event
 from sentry.plugins.base import JSONResponse
@@ -172,13 +173,12 @@ class JIRAPlugin(IssuePlugin):
             initial=self.get_initial_form_data(request, group, event),
             jira_client=self.get_jira_client(group.project),
             project_key=self.get_option('default_project', group.project),
-            ignored_fields=self.get_option("ignored_fields", group.project))
-        #######################################################################
+            ignored_fields=self.get_option("ignored_fields", group.project)
+        )
+
         # to allow the form to be submitted, but ignored so that dynamic fields
         # can change if the issuetype is different
-        #
         if request.POST and request.POST.get("changing_issuetype") == "0":
-        #######################################################################
             if form.is_valid():
                 issue_id, error = self.create_issue(
                     group=group,
