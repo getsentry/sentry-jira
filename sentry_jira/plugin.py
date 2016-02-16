@@ -16,8 +16,8 @@ from sentry_jira.jira import JIRAClient, JIRAError
 
 
 class JIRAPlugin(IssuePlugin):
-    author = "Adam Thurlow"
-    author_url = "https://github.com/thurloat/sentry-jira"
+    author = "Sentry Team"
+    author_url = "https://github.com/getsentry/sentry-jira"
     version = PLUGINVERSION
 
     slug = "jira"
