@@ -10,9 +10,6 @@
     {{ block.super }}
     <script type="text/javascript">
         $(document).ready(function(){
-            // bind regular selects and multiselects to use select2
-            $("#jira_issue_form select").select2({"width": "460px"});
-
             // user autocompletion!
             $("#jira_issue_form input.user-selector").each(function(i, el){
                 var $el = $(el);
