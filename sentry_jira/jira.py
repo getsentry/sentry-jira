@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import logging
 
+from requests.exceptions import RequestException
 from sentry.http import build_session
 from sentry.utils import json
 from sentry.utils.cache import cache
@@ -12,6 +13,66 @@ from django.utils.datastructures import SortedDict
 log = logging.getLogger(__name__)
 
 CACHE_KEY = "SENTRY-JIRA-%s-%s"
+
+
+class JIRAError(Exception):
+    status_code = None
+
+    def __init__(self, response_text, status_code=None):
+        if status_code is not None:
+            self.status_code = status_code
+        self.text = response_text
+        self.xml = None
+        if response_text:
+            try:
+                self.json = json.loads(response_text, object_pairs_hook=SortedDict)
+            except (JSONDecodeError, ValueError):
+                if self.text[:5] == "<?xml":
+                    # perhaps it's XML?
+                    self.xml = BeautifulStoneSoup(self.text)
+                # must be an awful code.
+                self.json = None
+        else:
+            self.json = None
+        super(JIRAError, self).__init__(response_text)
+
+    @classmethod
+    def from_response(cls, response):
+        return cls(response.text, response.status_code)
+
+
+class JIRAUnauthorized(JIRAError):
+    status_code = 401
+
+
+class JIRAResponse(object):
+    """
+    A Slimy little wrapper around a python-requests response object that renders
+    JSON from JIRA's ordered dicts (fields come back in order, but python obv.
+    doesn't care)
+    """
+    def __init__(self, response_text, status_code):
+        self.text = response_text
+        self.xml = None
+        if response_text:
+            try:
+                self.json = json.loads(response_text, object_pairs_hook=SortedDict)
+            except (JSONDecodeError, ValueError):
+                if self.text[:5] == "<?xml":
+                    # perhaps it's XML?
+                    self.xml = BeautifulStoneSoup(self.text)
+                # must be an awful code.
+                self.json = None
+        else:
+            self.json = None
+        self.status_code = status_code
+
+    def __repr__(self):
+        return "<JIRAResponse<%s> %s>" % (self.status_code, self.text[:120])
+
+    @classmethod
+    def from_response(cls, response):
+        return cls(response.text, response.status_code)
 
 
 class JIRAClient(object):
@@ -41,18 +102,13 @@ class JIRAClient(object):
 
     def get_create_meta_for_project(self, project):
         response = self.get_create_meta(project)
-
-        if not response:
-            raise Exception("Could not find project")
-
         metas = response.json
 
+        # XXX(dcramer): document how this is possible, if it even is
         if len(metas["projects"]) > 1:
-            raise Exception("More than one project found")
+            raise JIRAError("More than one project found.")
 
-        if len(metas["projects"]) == 1:
-            meta = metas["projects"][0]
-            return meta
+        return metas["projects"][0]
 
     def get_versions(self, project):
         return self.get_cached(self.VERSIONS_URL % project)
@@ -84,10 +140,21 @@ class JIRAClient(object):
                 r = session.post(
                     url, json=payload, auth=auth,
                     verify=False, timeout=self.HTTP_TIMEOUT)
-            return JIRAResponse(r.text, r.status_code)
+        except RequestException as e:
+            resp = e.response
+            if resp.status_code == 401:
+                raise JIRAUnauthorized.from_response(resp)
+            raise JIRAError.from_response(resp)
         except Exception as e:
-            logging.error('Error in request to %s: %s', url, e.message)
-            return JIRAResponse("There was a problem reaching %s: %s" % (url, e.message), 500)
+            logging.error('Error in request to %s: %s', url, e.message[:128],
+                          exc_info=True)
+            raise JIRAError('Internal error', 500)
+
+        if r.status_code == 401:
+            raise JIRAUnauthorized.from_response(r)
+        elif r.status_code < 200 or r.status_code >= 300:
+            raise JIRAError.from_response(r)
+        return JIRAResponse.from_response(r)
 
     def get_cached(self, full_url):
         """
@@ -99,29 +166,5 @@ class JIRAClient(object):
         cached_result = cache.get(key)
         if not cached_result:
             cached_result = self.make_request('get', full_url)
-            if cached_result.status_code == 200:
-                cache.set(key, cached_result, 60)
+            cache.set(key, cached_result, 60)
         return cached_result
-
-
-class JIRAResponse(object):
-    """
-    A Slimy little wrapper around a python-requests response object that renders
-    JSON from JIRA's ordered dicts (fields come back in order, but python obv.
-    doesn't care)
-    """
-    def __init__(self, response_text, status_code):
-        self.text = response_text
-        self.xml = None
-        try:
-            self.json = json.loads(response_text, object_pairs_hook=SortedDict)
-        except (JSONDecodeError, ValueError):
-            if self.text[:5] == "<?xml":
-                # perhaps it's XML?
-                self.xml = BeautifulStoneSoup(self.text)
-            # must be an awful code.
-            self.json = None
-        self.status_code = status_code
-
-    def __repr__(self):
-        return "<JIRAResponse<%s> %s>" % (self.status_code, self.text[:120])

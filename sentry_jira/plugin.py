@@ -12,7 +12,7 @@ from sentry.utils.http import absolute_uri
 
 from sentry_jira import VERSION as PLUGINVERSION
 from sentry_jira.forms import JIRAOptionsForm, JIRAIssueForm
-from sentry_jira.jira import JIRAClient
+from sentry_jira.jira import JIRAClient, JIRAError
 
 
 class JIRAPlugin(IssuePlugin):
@@ -95,11 +95,9 @@ class JIRAPlugin(IssuePlugin):
         the form.
         """
         jira_client = self.get_jira_client(group.project)
-        issue_response = jira_client.create_issue(form_data)
-
-        if issue_response.status_code in (200, 201):  # weirdly inconsistent.
-            return issue_response.json.get("key"), None
-        else:
+        try:
+            issue_response = jira_client.create_issue(form_data)
+        except JIRAError as e:
             # return some sort of error.
             errdict = {"__all__": None}
             if issue_response.status_code == 500:
@@ -111,6 +109,8 @@ class JIRAPlugin(IssuePlugin):
             else:
                 errdict["__all__"] = ["Something went wrong, Sounds like a configuration issue: code %s" % issue_response.status_code]
             return None, errdict
+        else:
+            return issue_response.json.get("key"), None
 
     def get_issue_url(self, group, issue_id, **kwargs):
         instance = self.get_option('instance_url', group.project)
@@ -317,30 +317,26 @@ class JIRAPlugin(IssuePlugin):
         if not self.should_create(group, event, is_new):
             return
 
+        initial = self.get_initial_form_data({}, group, event)
+        default_priority = initial.get('priority')
+        default_issue_type = initial.get('issuetype')
+        default_project = self.get_option('default_project')
+
+        if not (default_priority and default_issue_type and default_project):
+            return
+
         jira_client = self.get_jira_client(group.project)
 
-        project_key = self.get_option('default_project', group.project)
-
-        project = jira_client.get_create_meta_for_project(project_key)
-
-        if project:
-            post_data = {'project': {'id': project['id']}}
-
-        initial = self.get_initial_form_data({}, group, event)
-
-        post_data['summary'] = initial['summary']
-        post_data['description'] = initial['description']
+        post_data = {
+            'project': {'id': default_project},
+            'summary': initial['summary'],
+            'description': initial['description'],
+        }
 
         interface = event.interfaces.get('sentry.interfaces.Exception')
 
         if interface:
             post_data['description'] += "\n{code}%s{code}" % interface.get_stacktrace(event, system_frames=False, max_frames=settings.SENTRY_MAX_STACKTRACE_FRAMES)
-
-        default_priority = initial.get('priority')
-        default_issue_type = initial.get('issuetype')
-
-        if not default_priority or not default_issue_type:
-            raise Exception("Default priority and issue type not configured...cannot auto create JIRA ticket.")
 
         post_data['priority'] = {'id': default_priority}
         post_data['issuetype'] = {'id': default_issue_type}

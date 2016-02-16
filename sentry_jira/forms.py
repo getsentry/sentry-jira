@@ -2,7 +2,7 @@ import logging
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
 from django import forms
-from .jira import JIRAClient
+from .jira import JIRAClient, JIRAError
 
 log = logging.getLogger(__name__)
 
@@ -55,26 +55,36 @@ class JIRAOptionsForm(forms.Form):
     )
 
     def __init__(self, data=None, *args, **kwargs):
+
         super(JIRAOptionsForm, self).__init__(data=data, *args, **kwargs)
 
         initial = kwargs.get("initial") or {}
         for key, value in self.data.items():
             initial[key.lstrip(self.prefix or '')] = value
 
+        has_credentials = all(initial.get(k) for k in ('instance_url', 'username', 'password'))
         project_safe = False
-        if initial.get("instance_url"):
-            # make a connection to JIRA to fetch a default project.
-            jira = JIRAClient(initial["instance_url"], initial.get("username"), initial.get("password"))
-            projects_response = jira.get_projects_list()
-            if projects_response.status_code == 200:
+        can_auto_create = False
+        if has_credentials:
+            jira = JIRAClient(initial['instance_url'], initial['username'], initial['password'])
+
+            try:
+                projects_response = jira.get_projects_list()
+            except JIRAError:
+                pass
+            else:
                 projects = projects_response.json
                 if projects:
                     project_choices = [(p.get('key'), "%s (%s)" % (p.get('name'), p.get('key'))) for p in projects]
                     project_safe = True
+                    can_auto_create = True
                     self.fields["default_project"].choices = project_choices
 
-            priorities_response = jira.get_priorities()
-            if priorities_response.status_code == 200:
+            try:
+                priorities_response = jira.get_priorities()
+            except JIRAError:
+                pass
+            else:
                 priorities = priorities_response.json
                 if priorities:
                     priority_choices = [(p.get('id'), "%s" % (p.get('name'))) for p in priorities]
@@ -82,8 +92,11 @@ class JIRAOptionsForm(forms.Form):
 
             default_project = initial.get('default_project')
             if default_project:
-                meta = jira.get_create_meta_for_project(default_project)
-                if meta:
+                try:
+                    meta = jira.get_create_meta_for_project(default_project)
+                except JIRAError as e:
+                    can_auto_create = False
+                else:
                     self.fields["default_issue_type"].choices = JIRAFormUtils.make_choices(meta["issuetypes"])
 
         if not initial.get('password'):
@@ -96,6 +109,8 @@ class JIRAOptionsForm(forms.Form):
             del self.fields["default_issue_type"]
             del self.fields["default_priority"]
             del self.fields["ignored_fields"]
+
+        if not can_auto_create:
             del self.fields["auto_create"]
 
     def clean_password(self):
@@ -149,18 +164,20 @@ class JIRAOptionsForm(forms.Form):
 
         if cd.get("password"):
             jira = JIRAClient(cd["instance_url"], cd["username"], cd["password"])
-            sut_response = jira.get_priorities()
-            if sut_response.status_code == 403 or sut_response.status_code == 401:
-                self.errors["username"] = ["Username might be incorrect"]
-                self.errors["password"] = ["Password might be incorrect"]
-                raise ValidationError("Unable to connect to JIRA: %s, if you have "
-                                      "tried and failed multiple times you may have"
-                                      " to enter a CAPTCHA in JIRA to re-enable API"
-                                      " logins." % sut_response.status_code)
-            elif sut_response.status_code == 500 or sut_response.json is None:
+            try:
+                sut_response = jira.get_priorities()
+            except JIRAError as e:
+                if e.status_code == 403 or e.status_code == 401:
+                    self.errors["username"] = ["Username might be incorrect"]
+                    self.errors["password"] = ["Password might be incorrect"]
+                    raise ValidationError("Unable to connect to JIRA: %s, if you have "
+                                          "tried and failed multiple times you may have"
+                                          " to enter a CAPTCHA in JIRA to re-enable API"
+                                          " logins." % e.status_code)
+                else:
+                    raise ValidationError("Unable to connect to JIRA: Bad Response")
+            if not sut_response.json:
                 raise ValidationError("Unable to connect to JIRA: Bad Response")
-            elif sut_response.status_code > 200:
-                raise ValidationError("Unable to connect to JIRA: %s" % sut_response.status_code)
 
         return cd
 
