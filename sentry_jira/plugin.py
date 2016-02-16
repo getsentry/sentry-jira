@@ -321,7 +321,7 @@ class JIRAPlugin(IssuePlugin):
         initial = self.get_initial_form_data({}, group, event)
         default_priority = initial.get('priority')
         default_issue_type = initial.get('issuetype')
-        default_project = self.get_option('default_project')
+        default_project = self.get_option('default_project', group.project)
 
         if not (default_priority and default_issue_type and default_project):
             return
