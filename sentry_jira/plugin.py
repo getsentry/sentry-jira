@@ -98,6 +98,7 @@ class JIRAPlugin(IssuePlugin):
         try:
             issue_response = jira_client.create_issue(form_data)
         except JIRAError as e:
+            issue_response = e.response
             # return some sort of error.
             errdict = {"__all__": None}
             if issue_response.status_code == 500:
@@ -324,8 +325,6 @@ class JIRAPlugin(IssuePlugin):
 
         if not (default_priority and default_issue_type and default_project):
             return
-
-        jira_client = self.get_jira_client(group.project)
 
         post_data = {
             'project': {'id': default_project},

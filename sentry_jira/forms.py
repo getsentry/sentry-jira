@@ -94,7 +94,7 @@ class JIRAOptionsForm(forms.Form):
             if default_project:
                 try:
                     meta = jira.get_create_meta_for_project(default_project)
-                except JIRAError as e:
+                except JIRAError:
                     can_auto_create = False
                 else:
                     self.fields["default_issue_type"].choices = JIRAFormUtils.make_choices(meta["issuetypes"])
