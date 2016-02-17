@@ -34,7 +34,7 @@ class JIRAError(Exception):
                 self.json = None
         else:
             self.json = None
-        super(JIRAError, self).__init__(response_text)
+        super(JIRAError, self).__init__(response_text[:128])
 
     @classmethod
     def from_response(cls, response):
