@@ -325,8 +325,14 @@ class JIRAPlugin(IssuePlugin):
         if not (default_priority and default_issue_type and default_project):
             return
 
+        jira_client = self.get_jira_client(group.project)
+        meta = jira_client.get_create_meta(default_project).json
+        if not meta or len(meta["projects"]) == 0:
+            return
+        project = meta["projects"][0]
+
         post_data = {
-            'project': {'id': default_project},
+            'project': {'id': project},
             'summary': initial['summary'],
             'description': initial['description'],
         }

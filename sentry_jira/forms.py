@@ -1,4 +1,7 @@
+from __future__ import absolute_import
+
 import logging
+
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
 from django import forms
@@ -175,6 +178,7 @@ class JIRAOptionsForm(forms.Form):
                                           " to enter a CAPTCHA in JIRA to re-enable API"
                                           " logins." % e.status_code)
                 else:
+                    logging.exception(e)
                     raise ValidationError("Unable to connect to JIRA: Bad Response")
             if not sut_response.json:
                 raise ValidationError("Unable to connect to JIRA: Bad Response")
@@ -206,7 +210,7 @@ class JIRAIssueForm(forms.Form):
     )
 
     def __init__(self, *args, **kwargs):
-        self.ignored_fields = kwargs.pop("ignored_fields")
+        self.ignored_fields = set((kwargs.pop("ignored_fields") or '').split(","))
         initial = kwargs.get("initial")
         jira_client = kwargs.pop("jira_client")
         project_key = kwargs.pop("project_key")
@@ -228,7 +232,7 @@ class JIRAIssueForm(forms.Form):
             return
 
         # Early exit #2, no projects available.
-        if len(meta["projects"]) is 0:
+        if len(meta["projects"]) == 0:
             super(JIRAIssueForm, self).__init__(*args, **kwargs)
             self.errors["__all__"] = [
                 "Error in JIRA configuration, no projects found for user %s.".format(jira_client.username)
@@ -270,7 +274,7 @@ class JIRAIssueForm(forms.Form):
         dynamic_fields.sort(key=lambda f: anti_gravity.get(f) or 0)
         # build up some dynamic fields based on required shit.
         for field in dynamic_fields:
-            if field in self.fields.keys() or field in [x.strip() for x in self.ignored_fields.split(",")]:
+            if field in self.fields.keys() or field in [x.strip() for x in self.ignored_fields]:
                 # don't overwrite the fixed fields for the form.
                 continue
             mb_field = self.build_dynamic_field(self.issue_type["fields"][field])
