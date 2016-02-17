@@ -98,17 +98,16 @@ class JIRAPlugin(IssuePlugin):
         try:
             issue_response = jira_client.create_issue(form_data)
         except JIRAError as e:
-            issue_response = e.response
             # return some sort of error.
             errdict = {"__all__": None}
-            if issue_response.status_code == 500:
+            if e.status_code == 500:
                 errdict["__all__"] = ["JIRA Internal Server Error."]
-            elif issue_response.status_code == 400:
-                for k in issue_response.json["errors"].keys():
-                    errdict[k] = [issue_response.json["errors"][k]]
-                errdict["__all__"] = [issue_response.json["errorMessages"]]
+            elif e.status_code == 400:
+                for k in e.json["errors"].keys():
+                    errdict[k] = [e.json["errors"][k]]
+                errdict["__all__"] = [e.json["errorMessages"]]
             else:
-                errdict["__all__"] = ["Something went wrong, Sounds like a configuration issue: code %s" % issue_response.status_code]
+                errdict["__all__"] = ["Something went wrong, Sounds like a configuration issue: code %s" % e.status_code]
             return None, errdict
         else:
             return issue_response.json.get("key"), None
