@@ -73,8 +73,9 @@ class JIRAOptionsForm(forms.Form):
 
             try:
                 projects_response = jira.get_projects_list()
-            except JIRAError:
-                pass
+            except JIRAError as e:
+                if e.status_code == 401:
+                    has_credentials = False
             else:
                 projects = projects_response.json
                 if projects:
@@ -85,8 +86,9 @@ class JIRAOptionsForm(forms.Form):
 
             try:
                 priorities_response = jira.get_priorities()
-            except JIRAError:
-                pass
+            except JIRAError as e:
+                if e.status_code == 401:
+                    has_credentials = False
             else:
                 priorities = priorities_response.json
                 if priorities:
@@ -97,12 +99,14 @@ class JIRAOptionsForm(forms.Form):
             if default_project:
                 try:
                     meta = jira.get_create_meta_for_project(default_project)
-                except JIRAError:
+                except JIRAError as e:
+                    if e.status_code == 401:
+                        has_credentials = False
                     can_auto_create = False
                 else:
                     self.fields["default_issue_type"].choices = JIRAFormUtils.make_choices(meta["issuetypes"])
 
-        if not initial.get('password'):
+        if not has_credentials:
             self.fields['password'].required = True
         else:
             self.fields['password'].help_text = _("Only enter a new password if you wish to update the stored value")
