@@ -1,4 +1,7 @@
+from __future__ import absolute_import
+
 import logging
+
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
 from django import forms
@@ -175,6 +178,7 @@ class JIRAOptionsForm(forms.Form):
                                           " to enter a CAPTCHA in JIRA to re-enable API"
                                           " logins." % e.status_code)
                 else:
+                    logging.exception(e)
                     raise ValidationError("Unable to connect to JIRA: Bad Response")
             if not sut_response.json:
                 raise ValidationError("Unable to connect to JIRA: Bad Response")

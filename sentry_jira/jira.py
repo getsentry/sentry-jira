@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import logging
 
-from requests.exceptions import RequestException
+from requests.exceptions import ConnectionError, RequestException
 from sentry.http import build_session
 from sentry.utils import json
 from sentry.utils.cache import cache
@@ -140,8 +140,12 @@ class JIRAClient(object):
                 r = session.post(
                     url, json=payload, auth=auth,
                     verify=False, timeout=self.HTTP_TIMEOUT)
+        except ConnectionError as e:
+            raise JIRAError(unicode(e))
         except RequestException as e:
             resp = e.response
+            if not resp:
+                raise JIRAError('Internal Error')
             if resp.status_code == 401:
                 raise JIRAUnauthorized.from_response(resp)
             raise JIRAError.from_response(resp)
