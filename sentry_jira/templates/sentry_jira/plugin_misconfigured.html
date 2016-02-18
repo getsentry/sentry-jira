@@ -1,0 +1,15 @@
+{% extends "sentry/plugins/bases/issue/create_issue.html" %}
+
+{% block main %}
+    <p>There is an error with the Jira configuration stored for your project.</p>
+    <ul>
+        {% if errorMessages %}
+            {% for message in errorMessages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        {% else %}
+            <li>An unknown error occurred while communicating with Jira.</li>
+        {% endif %}
+    </ul>
+    <p>You may wish to double check your <a href="{% url 'sentry-configure-project-plugin' project.organization.slug project.slug plugin.slug %}">configuration</a>.</p>
+{% endblock %}

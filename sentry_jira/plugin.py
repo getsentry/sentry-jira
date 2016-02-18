@@ -28,6 +28,7 @@ class JIRAPlugin(IssuePlugin):
     project_conf_template = "sentry_jira/project_conf_form.html"
     new_issue_form = JIRAIssueForm
     create_issue_template = 'sentry_jira/create_jira_issue.html'
+    plugin_misconfigured_template = 'sentry_jira/plugin_misconfigured.html'
 
     # Adding resource links for forward compatibility, still need to integrate
     # into existing `project_conf.html` template.
@@ -168,13 +169,20 @@ class JIRAPlugin(IssuePlugin):
         Event.objects.bind_nodes([event], 'data')
 
         # Added the ignored_fields to the new_issue_form call
-        form = self.new_issue_form(
-            request.POST or None,
-            initial=self.get_initial_form_data(request, group, event),
-            jira_client=self.get_jira_client(group.project),
-            project_key=self.get_option('default_project', group.project),
-            ignored_fields=self.get_option("ignored_fields", group.project)
-        )
+        try:
+            form = self.new_issue_form(
+                request.POST or None,
+                initial=self.get_initial_form_data(request, group, event),
+                jira_client=self.get_jira_client(group.project),
+                project_key=self.get_option('default_project', group.project),
+                ignored_fields=self.get_option("ignored_fields", group.project)
+            )
+        except JIRAError as e:
+            context = {
+                'errorMessages': e.json.get('errorMessages', []) if e.json else [],
+                'title': self.get_new_issue_title(),
+            }
+            return self.render(self.plugin_misconfigured_template, context)
 
         # to allow the form to be submitted, but ignored so that dynamic fields
         # can change if the issuetype is different

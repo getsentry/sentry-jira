@@ -351,6 +351,23 @@ class JIRAPluginTest(TestCase):
                 },
             }
 
+    @responses.activate
+    def test_create_issue_with_fetch_errors(self):
+        project = self.project
+        plugin = self.plugin
+
+        plugin.set_option('username', 'foo', project)
+        plugin.set_option('password', 'bar', project)
+        plugin.set_option('instance_url', 'https://getsentry.atlassian.net', project)
+        plugin.set_option('default_project', 'SEN', project)
+
+        self.login_as(self.user)
+
+        response = self.client.get(self.action_path)
+
+        assert response.status_code == 200, vars(response)
+        self.assertTemplateUsed(response, 'sentry_jira/plugin_misconfigured.html')
+
     def test_configure_renders(self):
         self.login_as(self.user)
         with jira_mock():
