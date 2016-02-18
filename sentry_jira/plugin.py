@@ -192,7 +192,7 @@ class JIRAPlugin(IssuePlugin):
                     # API, but were marked as ignored fields in the
                     # configuration with the global error reporter for the form
                     ignored_errors = [v for k, v in error.items()
-                                      if k in form.ignored_fields.split(",")]
+                                      if k in form.ignored_fields]
                     if len(ignored_errors) > 0:
                         errs = form.errors['__all__']
                         errs.append("Validation Error on ignored field, check"
