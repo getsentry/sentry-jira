@@ -108,7 +108,10 @@ class JIRAClient(object):
         if len(metas["projects"]) > 1:
             raise JIRAError("More than one project found.")
 
-        return metas["projects"][0]
+        try:
+            return metas["projects"][0]
+        except IndexError:
+            return None
 
     def get_versions(self, project):
         return self.get_cached(self.VERSIONS_URL % project)

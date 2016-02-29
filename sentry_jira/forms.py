@@ -104,7 +104,10 @@ class JIRAOptionsForm(forms.Form):
                         has_credentials = False
                     can_auto_create = False
                 else:
-                    self.fields["default_issue_type"].choices = JIRAFormUtils.make_choices(meta["issuetypes"])
+                    if meta:
+                        self.fields["default_issue_type"].choices = JIRAFormUtils.make_choices(meta["issuetypes"])
+                    else:
+                        can_auto_create = False
 
         if not has_credentials:
             self.fields['password'].required = True
