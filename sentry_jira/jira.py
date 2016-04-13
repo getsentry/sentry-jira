@@ -104,6 +104,10 @@ class JIRAClient(object):
         response = self.get_create_meta(project)
         metas = response.json
 
+        # We saw an empty JSON response come back from the API :(
+        if not metas:
+            return None
+
         # XXX(dcramer): document how this is possible, if it even is
         if len(metas["projects"]) > 1:
             raise JIRAError("More than one project found.")
