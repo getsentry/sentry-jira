@@ -68,6 +68,10 @@ class JIRAOptionsForm(forms.Form):
         has_credentials = all(initial.get(k) for k in ('instance_url', 'username', 'password'))
         project_safe = False
         can_auto_create = False
+
+        # auto_create is not available on new configurations
+        has_auto_create = 'auto_create' in initial
+
         if has_credentials:
             jira = JIRAClient(initial['instance_url'], initial['username'], initial['password'])
 
@@ -84,6 +88,7 @@ class JIRAOptionsForm(forms.Form):
                     can_auto_create = True
                     self.fields["default_project"].choices = project_choices
 
+        if project_safe and has_auto_create:
             try:
                 priorities_response = jira.get_priorities()
             except JIRAError as e:

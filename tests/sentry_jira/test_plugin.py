@@ -415,7 +415,4 @@ class JIRAPluginTest(TestCase):
         assert response.status_code == 200
         self.assertTemplateUsed(response, 'sentry_jira/project_conf_form.html')
 
-        assert 'default_project' in response.content
-        assert 'default_issue_type' in response.content
-        assert 'default_priority' in response.content
         assert 'ignored_fields' in response.content
