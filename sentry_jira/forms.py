@@ -186,9 +186,13 @@ class JIRAOptionsForm(forms.Form):
                                           " logins." % e.status_code)
                 else:
                     logging.exception(e)
-                    raise ValidationError("Unable to connect to JIRA: Bad Response")
+                    raise ValidationError("Unable to connect to JIRA: the remote "
+                                          "server returned an unhandled %s status "
+                                          " code" % e.status_code)
             if not sut_response.json:
-                raise ValidationError("Unable to connect to JIRA: Bad Response")
+                raise ValidationError("Unable to connect to JIRA: "
+                                      "the response did not contain valid JSON, did "
+                                      "you enter the correct instance URL?")
 
         return cd
 
