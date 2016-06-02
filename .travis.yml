@@ -1,28 +1,28 @@
 sudo: false
 language: python
 services:
-  - memcached
-  - postgresql
-  - redis-server
+- memcached
+- postgresql
+- redis-server
 python:
-  - "2.7"
+- '2.7'
 cache:
   directories:
-    - node_modules
-    - $HOME/.cache/pip
+  - node_modules
+  - "$HOME/.cache/pip"
 deploy:
   provider: pypi
   user: getsentry
   password:
-    secure: NMwOI1H9arp2vbgaidx9OY6y8990hiu0WsHtowEvEdGKXNzAQcy0sW3SoKcB6FN0bk11xhj49+5C++KAwMYwE/SL8Y5OoZ1/iYVI4/XlWNukr+1/pfPKVMgw3v5W+pL5Ba9TBdFfIoFPNYUDPLItSSjg94Bm95034gBkYWC5Hl0=
+    secure: Yom5X3EjXAAjc9zT1dpH1ly1g1pEmmkY75BOfZ1Xv1iU9SEFs9VVCxrwXBCYtCcH3r3FoCFhGeMZN2q2T8eTsqespBprVYKzLg09YFH99pZUdAETPktrfBXMzPvY2mQgCQNP0pvY2fSR/pPBg+y1CTuuhvn0tYlmiPstlf+82G4=
   on:
     tags: true
-  distributions: 'sdist bdist_wheel'
+  distributions: sdist bdist_wheel
 env:
   global:
-    - PIP_DOWNLOAD_CACHE=".pip_download_cache"
+  - PIP_DOWNLOAD_CACHE=".pip_download_cache"
 install:
-  - make develop
+- make develop
 script:
-  - flake8
-  - py.test
+- flake8
+- py.test
