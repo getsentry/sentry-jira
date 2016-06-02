@@ -14,7 +14,7 @@ tests_require = [
 
 setup(
     name='sentry-jira',
-    version='0.11.0.dev0',
+    version='0.11.1',
     author='Adam Thurlow',
     author_email='thurloat@gmail.com',
     url='http://github.com/thurloat/sentry-jira',
