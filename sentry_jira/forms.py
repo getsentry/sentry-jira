@@ -251,7 +251,7 @@ class JIRAIssueForm(forms.Form):
         if len(meta["projects"]) == 0:
             super(JIRAIssueForm, self).__init__(*args, **kwargs)
             self.errors["__all__"] = [
-                "Error in JIRA configuration, no projects found for user %s.".format(jira_client.username)
+                "Error in JIRA configuration, no projects found for user {}.".format(jira_client.username)
             ]
             return
 
