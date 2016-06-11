@@ -29,7 +29,7 @@ More Documentation
 ------------------
 
 Have a look at the readthedocs page for more detailed configuration steps and a
-changelog: http://sentry-jira.readthedocs.org/en/latest/
+changelog: https://sentry-jira.readthedocs.io/en/latest/
 
 License
 -------
