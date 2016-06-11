@@ -33,7 +33,7 @@ class JIRAPlugin(IssuePlugin):
     # Adding resource links for forward compatibility, still need to integrate
     # into existing `project_conf.html` template.
     resource_links = [
-        ("Documentation", "http://sentry-jira.readthedocs.org/en/latest/"),
+        ("Documentation", "https://sentry-jira.readthedocs.io/en/latest/"),
         ("README", "https://raw.github.com/thurloat/sentry-jira/master/README.rst"),
         ("Bug Tracker", "https://github.com/thurloat/sentry-jira/issues"),
         ("Source", "http://github.com/thurloat/sentry-jira"),
