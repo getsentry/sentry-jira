@@ -46,8 +46,8 @@
             // refresh the page with updated form based on issue type.
             $("#jira_issue_form form").append('<input type="hidden" name="changing_issuetype" value="0" />');
             $("#id_issuetype").on("change", function(){
-                $("#changing_issuetype").val("1");
-                $("#jira_issue_form").submit();
+                $("[name='changing_issuetype']").val("1");
+                $("#jira_issue_form form").submit();
             });
         });
     </script>
