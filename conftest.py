@@ -1,5 +1,8 @@
 from __future__ import absolute_import
 
+import os
+os.environ.setdefault('DB', 'sqlite')
+
 pytest_plugins = [
     'sentry.utils.pytest'
 ]
