@@ -2,7 +2,6 @@
 from setuptools import setup, find_packages
 
 install_requires = [
-    'sentry>=7.0.0',
     'BeautifulSoup>=3.2.1'
 ]
 
@@ -10,6 +9,7 @@ tests_require = [
     'exam',
     'flake8>=2.0,<2.1',
     'responses',
+    'sentry>=8.6.0',
 ]
 
 setup(
