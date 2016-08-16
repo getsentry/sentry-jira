@@ -344,6 +344,8 @@ class JIRAIssueForm(forms.Form):
                         v = [{"name": v}]
                     elif schema["type"] == "array" and schema.get('items') != "string":
                         v = [{"id": vx} for vx in v]
+                    elif schema["type"] == "array" and schema.get('items') == "string":
+                        v = [v]
                     elif schema.get("custom") == CUSTOM_FIELD_TYPES.get("textarea"):
                         v = v
                     elif (schema.get("type") != "string"
