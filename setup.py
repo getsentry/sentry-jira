@@ -9,7 +9,7 @@ tests_require = [
     'exam',
     'flake8>=2.0,<2.1',
     'responses',
-    'sentry>=8.6.0',
+    'sentry<8.7',
 ]
 
 setup(
