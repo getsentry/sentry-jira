@@ -337,17 +337,19 @@ class JIRAIssueForm(forms.Form):
                     schema = f["schema"]
                     if schema.get("type") == "string" and not schema.get("custom") == CUSTOM_FIELD_TYPES["select"]:
                         continue  # noop
-                    if schema["type"] == "user" or schema.get('item') == "user":
+                    if schema["type"] == "user" or schema.get('items') == "user":
                         v = {"name": v}
                     elif schema.get("custom") == CUSTOM_FIELD_TYPES.get("multiuserpicker"):
                         # custom multi-picker
                         v = [{"name": v}]
-                    elif schema["type"] == "array" and schema.get("item") != "string":
+                    elif schema["type"] == "array" and schema.get('items') != "string":
                         v = [{"id": vx} for vx in v]
+                    elif schema["type"] == "array" and schema.get('items') == "string":
+                        v = [v]
                     elif schema.get("custom") == CUSTOM_FIELD_TYPES.get("textarea"):
                         v = v
                     elif (schema.get("type") != "string"
-                            or schema.get("item") != "string"
+                            or schema.get('items') != "string"
                             or schema.get("custom") == CUSTOM_FIELD_TYPES.get("select")):
                         v = {"id": v}
                     very_clean[field] = v
